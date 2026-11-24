@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENER · Optimizador IFC</title>
+<style>
+:root{
+  --bg:#0a111d; --bg2:#0d1626; --panel:#111b2e; --panel2:#152239; --line:#22314d; --line2:#2c3e60;
+  --text:#e5ecf6; --muted:#8798b5; --dim:#5f7192;
+  --accent:#0aa0e0; --accent2:#18c3a4; --warn:#f2a93b; --danger:#ef5466; --ok:#2fcf7f;
+  --radius:10px; --mono:'Cascadia Code','Consolas','SFMono-Regular',monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.topbar{display:flex;align-items:center;gap:24px;padding:12px 24px;background:linear-gradient(90deg,#08101b,#0f1b30);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:14px;min-width:230px}
+.logo{height:30px;width:auto;display:block}
+.brand .sep{width:1px;height:28px;background:var(--line2)}
+.brand .sub{color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.ttl h1{margin:0;font-size:18px;font-weight:650}
+.ttl p{margin:0;color:var(--muted);font-size:12px}
+.tags{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pill{border:1px solid var(--line2);background:var(--panel);color:var(--muted);border-radius:999px;padding:3px 10px;font-size:11.5px}
+.pill.ok{color:var(--accent2);border-color:#1d5a50}
+main{display:grid;grid-template-columns:minmax(380px,470px) 1fr;gap:18px;padding:18px 24px 40px;max-width:1700px;margin:0 auto}
+@media(max-width:1050px){main{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.card h2{margin:0 0 12px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#04121c;font-size:11px;font-weight:800;letter-spacing:0}
+.drop{border:1.5px dashed var(--line2);border-radius:var(--radius);padding:22px;text-align:center;cursor:pointer;transition:.15s;background:var(--bg2)}
+.drop:hover,.drop.over{border-color:var(--accent);background:#0e1d33}
+.drop b{display:block;font-size:15px;margin-bottom:4px}
+.drop small{color:var(--muted)}
+.finfo{margin-top:12px;display:none;gap:6px 14px;grid-template-columns:auto 1fr;font-size:13px}
+.finfo.show{display:grid}
+.finfo div:nth-child(odd){color:var(--muted)}
+.finfo div:nth-child(even){font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.opt{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--bg2);transition:border-color .15s}
+.opt.on{border-color:#1e4a6b}
+.opt-h{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;cursor:pointer}
+.opt-h .tx{flex:1;min-width:0}
+.opt-h .t{font-weight:600;font-size:13.5px}
+.opt-h .d{color:var(--muted);font-size:12px;margin-top:2px}
+.est{font-family:var(--mono);font-size:11.5px;color:var(--accent2);white-space:nowrap;padding-top:2px;text-align:right}
+.est.zero{color:var(--dim)}
+.est small{display:block;color:var(--dim);font-family:inherit}
+.opt-b{display:none;padding:0 12px 12px 52px;font-size:12.5px}
+.opt.on .opt-b{display:block}
+.grp{margin:14px 0 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.sw{position:relative;width:34px;height:19px;flex:none;margin-top:1px}
+.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw span{position:absolute;inset:0;background:#2a3954;border-radius:20px;transition:.15s}
+.sw span:before{content:'';position:absolute;width:15px;height:15px;left:2px;top:2px;background:#cdd7e6;border-radius:50%;transition:.15s}
+.sw input:checked+span{background:var(--accent)}
+.sw input:checked+span:before{transform:translateX(15px);background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:6px;padding:3px 8px;background:var(--panel);cursor:pointer;user-select:none;font-size:12px}
+.chip input{accent-color:var(--accent);margin:0}
+.chip em{font-style:normal;color:var(--dim);font-family:var(--mono);font-size:11px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.inp{background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:5px 8px;outline:none}
+.inp:focus{border-color:var(--accent)}
+.note{color:var(--muted);font-size:11.5px;margin-top:6px}
+.note.w{color:var(--warn)}
+.lst{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:6px;margin-top:6px;background:var(--panel)}
+.lst label{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;padding:4px 8px;border-bottom:1px solid #1a2741;cursor:pointer;font-size:12px}
+.lst label:hover{background:#17243c}
+.lst label em{font-style:normal;color:var(--dim);font-family:var(--mono);font-size:11px}
+.lst input{accent-color:var(--accent);margin:0}
+.lk{color:var(--accent);cursor:pointer;font-size:11.5px;background:none;border:none;padding:0}
+.btn{border:1px solid var(--line2);background:var(--panel2);border-radius:8px;padding:9px 16px;cursor:pointer;font-weight:600}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.pri{background:linear-gradient(180deg,#10a9e8,#0786c0);border-color:#0aa0e0;color:#fff}
+.btn.dan{color:var(--danger)}
+.actions{display:flex;gap:10px;margin-top:14px;position:sticky;bottom:0;background:var(--panel);padding-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:1300px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.kpi .l{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
+.kpi .v{font-size:21px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .s{color:var(--dim);font-size:11.5px}
+.prog{display:none}
+.prog.show{display:block}
+.pbar{height:9px;background:#1b2840;border-radius:9px;overflow:hidden;margin:8px 0 6px}
+.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .15s}
+.pmeta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;font-family:var(--mono)}
+.plabel{font-weight:600}
+.steps{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.step{font-size:11px;padding:2px 8px;border-radius:5px;background:#18253d;color:var(--dim)}
+.step.act{background:#0d3a57;color:#9fdcff}
+.step.done{background:#0f3a33;color:#7fe3cb}
+.estbox{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end}
+.estbox .big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.estbox .lb{color:var(--muted);font-size:12px}
+.bar2{height:12px;border-radius:12px;background:#1b2840;overflow:hidden;margin-top:12px;position:relative}
+.bar2 i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#0b6f9b,var(--accent))}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:1px solid var(--line2);position:sticky;top:0;background:var(--panel)}
+td{padding:5px 8px;border-bottom:1px solid #1a2741;font-variant-numeric:tabular-nums}
+td.n{text-align:right;font-family:var(--mono);font-size:12px}
+td.cls{font-family:var(--mono);font-size:12px}
+.tbar{height:6px;background:#1b2840;border-radius:6px;overflow:hidden;min-width:80px}
+.tbar i{display:block;height:100%;background:var(--accent)}
+.twrap{max-height:430px;overflow:auto}
+.log{font-family:var(--mono);font-size:12px;max-height:220px;overflow:auto;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre-wrap}
+.log .e{color:var(--danger)}.log .w{color:var(--warn)}.log .o{color:var(--ok)}
+.rep{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.rep .kpi .v{font-size:19px}
+.good{color:var(--ok)}
+.empty{color:var(--dim);text-align:center;padding:28px 10px}
+.adv{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.adv summary{cursor:pointer;color:var(--muted);font-size:12px}
+.hint{background:#0f2034;border:1px solid #1c3b5c;border-radius:8px;padding:10px 12px;color:#a9c4e2;font-size:12.5px;margin-top:10px}
+.hint b{color:#d6e9ff}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><img class="logo" alt="Sener" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWEAAABICAYAAAAnK0SdAAAlL0lEQVR42u1debwcRbX+umdubvYEskB2CLKDJBEwCfjYlVWBB4TNpwgICCooi6APARdAQPGxyfIAgYdssiqyaATDElYxsoSQkBAgZA/JTUhu7kzX++N8xRyKnpnumZ4tdP1+/btzZ3qrOlWnTn3nO6c8YwwAeJBi+LcNwGAUSgBgKYBO9V0GQB7NUTwAfsj7DADQnfXyAKwFsAxATp2T5XUGaUlLWtJSb+VFJWzL7gAmARgDYCv1fR7ATABvAHgAwJ8ArKHiMw1WYD4nCVDhfgXArgC+AGBTAP34/hkAqwDMBvAy6/AMJxf3PmlJS1rSUjcl7AHoC+B6AIdGvO5VAJcAuKWIAvNpeRrHWjUJKzprjfcEcDSA7wHYOsb17wC4hscKWsW5tFukJS1pqbclfBCAe6nQAgBvA3gdwCtUTBsB2AbAWOf6+wAcR2vSKuJyFmWGv5sq4QeP99kZwJUAtlO/G9bFp/X7VwD7sS5GwRe2zABwMs9rJpglLWlJy2fEEh7MJfqGVE6HAbg7RHnuCOA7AI5SOPIrAA4BMAuCJXcBGA3gCAC7AegFYDGAfwO4E8C/EsR/TwNwEYBu/O0jALcB2IlwigfgTFrtx9HaN1S6j/IdB6l7nwXgVyFWfFrSkpa01KYYYzLGGBhjJhkpgTFmrjFmmDGmzRiTVefY4yvGmNdMocw0xmzA304zxnxowstqY8y5vK9vjPGc+5Y7PPUuZ/Geef693xizpTFmsDGmg9+9wHO78dqp/H6VMWYjY8xQY8y9/K6Lf8/lNZmY75Ye6ZEe6RH70BDCnQCuoxU4AsC1tGrt0t6jNZylFbkngMepyzcBcBWA7wL4NcQZBgDvAZgGYCEKjrPzeW6gsOM4VnAewEm0gHP87iwAB0IchycB6M3zb3Hw6Gv4f08ApwCYB+BgACfwnC6+35nKmZeWtKQlLTXHhC0+2g5xuo3m/8cAuDkEJ7UOrHbiqDvjk3Q2H8DZXP6vBNCDuPOlAPrz93MB/CyGM8xOGF8AMIUQRAbAsQBuVHV4CMC+xKnHQZxv9v0HEeseCOBpAP/B63IQVsgdPK8TwF4Q9kTKmkhLWtKCWtK7oJTMagDf4N8AwG8hNK+848jKUXl2Avg6xPkVKGV6Fi3VJTznQwA30VpdQ6v0PACH8xo/xjv/gEo9A+BiKuBuvGdfADvwvLcAzFXWsw9gEYCX+PsWAIapyeROWsAZWsoXKys6LWlJS1pqqoStIs4AeIoWq0+ldlURZWQV8RwAp/P8LIDnIc6trIIbPCrOKbRcjYILDlbWc5Qyg38fAXAOn2PZFp9XjrYp/M536vocCoEcm6HAg85AHHgP8btnUyWclrSkpZ5KWEMJv1AW414ATi2CkVoL8zoI68FAqGzbKKvYKCt7CIAv8rcuCJviyBjKLgvgAghL42i+r4ZJhqvP/3aute/xjPpua/WbXQ1MAjABwH8rBZ+WtKQlLXVRwpZD2wmhonVRCZ1PheXCEkbxda/g594QTNYN2vg2gH9SoXcjBDAVwE8jUsIs3GEAvECow71uC3Xu20WU8Hvqu40cx52dLKayDXKpEk5LWtJSTyWsl+bP0xq0sMQtEHaDa7Va5fU3CPYbANhfObQsTHAtgA0g+RvehbAY/gPAa2Ui6eyzNoTg1ds67+87uSIAiX5b4LyfLcuowMH3gcP8sGUknzeiRWAJT3Gofdan2OGrw2vSunmqHlmumrKqDu53fgPq4VVwVFLvTJPVu1o5Zlpcjkncs6QS1vjwxShgqOMAnBGC39r/50DoaD6A7WkRW8W6looxD+B9CMPhd7S0/QiVAS3tmyFY7c8htLi8spCznCysol2ortV/VwCYrxR7lu+R530GQZyKL/F51ziN2mydO4tCJKCdzCxMU+wI1GHUiiaj7pdpQH199Wyj6mHhq5yqg/udrUtG+SNqXUwFRzFZZkrUOx+h3tkmolQmUR/f8Ss1kxzLjcdMhOs/lle2zEt5kKiy5wGsD+D7VJ6LiuSGOAfA/0Kce6tUA06HYLF7Q+hh7Y6AopTF/NsLwI9pSf8BwK0QWt0qxQ8OCCvoShs1IejPOcIjEyC5Mw5RFjIgbA40UQSdjhh0268fj/Ug+Lsf8t4ZrgSWA+hgu60i/JJvApaOrU8f1mFriAO1J+vWA4XoyOUQrvc7NALeh1Aii7F/mtFChFJIYD0Hsc5bcnW3Pq1Fj3VezvHwDsfWu8oHUyyjYL3k6CuFasfrcNZlBMf/AOoeW5/Vqj7vsD5Lldy8GqYT8GKOb1fv+YqBpcdjlnqlh5Jzpzpy2tGFMtbwbCq609h4m1MJa0HbBz+tsGM96AEJ7Nibg2s7YrOZiLOUx+cvggSE9GfHPJnKeAafvY2q1wYUbN5psL5KsW4J4GqIs3BcCGxxJa1irwkUsR5ctk6fg2S+G8/Pm1EBR7EE7X3WUBZzqZznQvD0GZzcltZ40HqqPsMhOT52gYSeDy3TR936vE8D4B+Ex2aqPphU8igLsw0EcE9M63MtgP/kagyq3hsC2AfAl1j34SoUP8o9pwH4O4QxNFlBikGd+qzumwEnkX0haQt2ofLNxLBKl9Jom8o2nqECxryE5GiVaS8Av6e+CMpY3QH74xsAjleraBCq/SKAiYRM7VgcrPrwh9Qr70EotH8HcI+byhIhVhM40B/jSx9FCzRsZvJVRYyT6WxXdhAPwvX9jco1Eadswnf4JoCNi5zTRThiGWcdTy3Z+rOT9Cxy7RzCELdwAmoW7N52vMHs4MdAWCLdS3TmcrN/ufIYJDVoLawQfc+xnGQPUZaum4zJlLG+3DqthiSluoYTdFLpSu09hjlO3qhlGK13UEEdC2EgbRhS76CEYvCK1HsygP+BpJxFHfKgaDluQcPoUGc16dYnjhwBCQi7jJNMUrnMtRKeFfK+pcp0GnCgUfodTjjbxnyHhwHsl41oYeyqXnxxmZnCFbr9vIBLxT4Qp1elluUsCE3tMlrWh0GS9WypLJ42dvZhEe/5Fq2+22hBLUdzOU8DQjjHAfihM/nki2SGC9T3rvINQqAnd3B0o6xqhRfmOKGeCwna6ebUJ+OshPwilEoTUg/LSz+Kiv129pk5CaYrNZzgsyHtjBKso4UQVs5lEI48HChGO0szESxIXe8MDabdIfz+MzgZ1Srq0yrDAYQqz1BGQRCSmsAo51uYHI3znX3GniikSfgJ4dEk086uUla8X0YXWjivJyQo7QcKBjXOuPOKGEZdvM+KcnCEXV5MpKYPaE5PK6NATYllU5ca4HGVcBsk4s7nLL8KwB95tFMRX8Wl+UoAT3IgtquBmed1OxFffJlwxnS1RLSK4lA+644GKmDbyYcREtrNWcb6ziANinxfacnXCH/L0ZK/RDFa8iHvHcZN/5D36VfEQew7A6Kdz9ofwIm0jpPajEA7n6IoYUACmb6lNhvIq9/8EAdOOQaLF4Ive7RIxxLmWJGwIvbUeNqVK8dRjhx9B5P3lb4J1Hhz5ZgPmXxsnfaC+G4uYN9JSo6+ckT7EeCzYTTWxiulGsZQKocwZMopYYspHcMlPCB84QVVCNSrwFFiFdEuAO7id/vTlG/jb2shHORpFNJKiEOxo4gyf4vCn81ZVQ+oHO9xp7rmjgbkGbbPG8dJZzjfrZh1pBXWKgiXeg7x3UVskw9Y/xHq/htwshpCy7cPB9RmMfDYOAMXHEA/dCIvM0XqMxfA/WyDBWrw9oWE1H+Nsm53LBlPKUibN8SGpv+mzvL0lNPttDL1LlZyERkrGaUYJtJIsekCkoAmNP57BoRB5UWQYwckPe5DNHpW8rpeEOz/yxBK6IYhFmlG3as3J7KhbEu/jr4a2/Yb8eikQdlW4pqPaDj4jkE60H6XjWAF3cjl7yu0NOMK0lNYWB/l9EIFXlx77tcA/FkFU7QpKxd8zmhI1JznJJsfqayvVWp51KUmiG8p66ULaBgEYZ0/w1UnL+VEfQWSxW4yxElVaenFZ3dLyCLWEMStkGjHvGMdhdXnd5AkT/OK3Pc1KujLIMmixocMYE9FPmbZPl0Qp2sjE/hnqYheh7AB5jssh0FUSGMJtbWFWNXlVo5dXMafR4VZbX21Av4xhCpqVNsWMwwmczX9ZgmMdTKAyynLI4usgrSD9VTW78wGJNmyMmhHgblljZ4ZEIbH24Q1uwgJeU7/7vmxrOuQL9Pm5T1T5RU+jN9lY9yntzFmBvMdL2W+Y59HG8/5gcqJvKfzDPseu6r3OFv9Zu/V0xgzi/dYYIzpp3IZ1yvHqM+/Dzu5jsOKzad8A99d517OqnzQxY6sc56fcF10DuhL+a5rI9TnVnWPrCMje2SUfPsbY/7Ja3NF7h2o3w6oMG+0bZ+hSi6BKV/sOfOMMVcaYw5kDu5y7d2NebIvZT5u3UZRntnFv19yZFHNWD5VtXNQRo5/M8Z053VtJeTYpp7zQAw5nl2hHO147mWMmR2jXW193zfG/Jj6pH81YyROp/OrHIBPswIrjDFDYiq2rJPI3RhjrnYGKNixbSOd4QjH/v2musd+6jf7jJ+q369oQIJ3+6w9ynRE3WnmGmN6qI7uVzlpeGqAJDWhnKQmlFIDNzDGvM36RFUadgBvTwWfj/CMd40xA1Rda62E7bnXFLlnmzMhhm2msKMxZn6MZ+r+c2cV41hfN94Y81EZBRzwWG6MGR3D4MpQHiONMcvK1NM+Y40xZocK5FipErbt+VjI/bJFDAYv5Ph4jEaJKgqq4ObZ5c8k4lMehPb0QUwsxwLz1xPftFj1BIWVAcCLCj7Y1nH+2eXA51EIwnhHvWeOy74zVbDHbxuw1ZFt5x9FzKcBLttXK95itfzQcnSiuLDKRhC+dblE/naZd5ny6kdZPltv84sA/lJmeWp/G05s2jQomqybw3u1UWP6yCsIoBv9F/sSzovqkLLjbG+Ft3oVYqH9AdygaIRemfF6F5flmYhMhjz78FwUIlXzJd7JOl5/5QSY1QtOalNyNI7cwqJSjcNmMcXClovlF8jECGX1+II5FEKUbXjxryvIxWDDGJfSOeiz8W/lYFrL5y1R3N6JxDY1MyJDBx9UUEJWAeW3EKuxmeRmJkgOj8NdHKkmrSgT5WtNvC+eT6yvr5NatBgOPJ9yraTdPbIfyvUvX03kO5V5r1qUvKLimYgTou3jL3M8RcVBbd/vS4c2KmDO2GedDgnGypW4h6YXXluBUrQK/G6l7EyZ99qFztl6ytGoEGyTVAIfHb3kavLA6Th+SL5g/Z1RToE/KhrK5ZBIGK8CB4F15FzPgeZBeKZ/ppe8i97KJ/j80WQWeMqpMUFFxr1BaytHBfwwJOcFIJEsF9bZ86rlMYGTQT5iJ841oQK27JqJAL6qlCzKUBufJgMi7qRiFdpf1e7fpsxkZ8jSaJVNXe0YuJle96j90/ahnStgJ9nVyBAIxS+KHD06xf9VwfOsXKYrg8pECDo6WTnu0IpZ1DxlHu8JCeWdzOXdc/TQnw4hgfdRVm3gmNf2u1GQhDsP8bPHz+dUyV81tAiOo1fZwguTARzAZ9+nJoZvqJnZQIj7ttzM73ZnHXdQSeMPjJCwo5blczF51P3rbMlFlVWGXnQvosUHSNhxJVnr7OBfgMKehlGiBvfkaipowjZEkaAGG1zkxbCGrRJui6kU7bWnQFhF5Zb8ebV5QlcFitEaeasjKnFfrXwnRpgkmlIJ29l0FK3BxyEBDLsRStgREu9+CYSg/CokifvXISF7QzlL7gDJ63Anl0ynoBA9czkk+KFavNIKaBkknPZlFHIOPAhJHrSE72ggVJctKdCN+M6AUIEWEHd6RO2p9yIEv17RoOW9wafzHEcZIIeEBCs0Q5TfplRyiPBe9veZVfaNHMoHFGkLrw8koAEtoIQ1xju3gmt7oxDd5cWEMk6IuNy3v7+SgHE4MyaEsR9asGTVYHlcRb0AwnlbCsFeRyqO70hI8orjIQTsLsUtbcenw4F/SaszqTh2q2ze4wC/ingQIPzew9Uu0T0gIavHE15YX/FvH+c72/IAlXRHE2zu2RZjyW8gvOn/QmF36WyRUFDUmdR+AN8lH2EJ60N4s28mkCxpekwMfl/CXK2UwP/NCuTRGxKcsyziWLQT1W60goMYSnhGFRns7Hu9FHFytPXbDeIo60KLKWFAoqOsAn4S4sl+kpXxaOluz2MfSLaybJHcAh0Q1sF1VL4dNchCFiiL+EiIF/Z8QhM91eyYAzAGkoM4q+qjk8TMhUT9XJ1gcpBGlJs4mV6KT+a+aIRCtgNv35hQwrISyfjjKJt3It7Dwlbbsk+sbmIHp1uWVKDYelEJT49hCdvJ1ITsrFPqmncTqOO8iFa7neC358p8TgvJ8eOcno9Bol/yVMBrnPPm8rgXknBlR0gkz2hIuraVEK/2B1R404tkWUp6oNtBdD+EmjQJggOPodXrTjZtKlLuWSrve9mhfdXRGl26KmBUeJDkJkfRqr+VcE0upLOihmkOdZax7WIu81cnBAUtjwHnGMJZm6pNCVphEn4ftV/NWBbEjoohFWUyXa4miUrkaJzIWi+GPhhLJdwqcvyY/tEF2crI9WyHLTNyEIbDMxG94/k6ZMTPQJgRt/AYxVlxQ86M3fkeczhRvFGniaJSS252BYmmrfW/MSSk81Qlp7u4PFweIiMvCZpNyLtsygk6yhLWPntRlbCVvWapg596ZTDPdlrD01po5WPqRJfcBIW0jVGdpUs5Hqsty9WGwIiAC7dxNXxfqylh10oqpjjzIXlMXYK051DaUEfqjqessHfUkrQcaT7fhMKaWSFDIKPaP4OCx/h0KvZXIc7VF6hwVoZQFJOykDepQFksTKj9OisISuiHtIRNpptHTNfpWsKrE5hgVlOhbxDh+XovSrQSVS1bQdpC06QzjHFSPHplIm2CBPORJo2lPkMF2auCKCDfSWtov9uYxwH87nVCMo9AeNFLQpR5NR15DGqPc5Zaxq6B+Aei1mGzVO+GOuWGOdFsUWGlJKLX4qRk1YnC0Ep+HX8d7UClNrps5m3sjWJ+/CWBaD0d5egG3GwF2dXhbgix/g4AB0EcVG5i9UrKqCq2O6r2yFTQt/unejd0QhsRw7I0KqtYzoGDKjk6UciMGLWs32p6zU/7WtNuXX9JwtvT+EWUcg7CfpkEcVK+DIk+6hXRG15sIPatIhghX+FOxva65RVgkikcES7H/hVAYxnHGo0rR9sPVkBy8UZlugDih/DrnEciMTgiLWia0NQMBLc9HUI5y9VgC3o/JD+BB9kn7EoA3+PxaMw8Bfa8HhW8y758XjXhpzZXa8+Y1w1Mu14oNDY0hhK2ctwJEj6exI4Xm8ScBPKtGKyR5K65qOMOr58FRXwZxDN9rFre+TXM7KX3BtsMghefBclSFXdPr0oS/w9Vgz5pB1Oj2QZoYWw4blv3A7BHg+Tof9aUsNdKVJAWtEQyhAbW8C9qrIy1Y89aQhfz/4vqQOXLJ+Qs9WK0j4UwFqRdLtG+21VnOQYq54T5rChhX+GKIzjzDYKk2etopYgVNC8mF0CwzVMglLLzUaDgBDXOF6GDV34GyW42JYYi9qpwJDZiDKxKu1xicvRDUhjUq3QqyqpZl5WwVcA9IPtXHYvCvm0GgmNmmoAC5oXMpq4ToNkVsX3/6wD8CbJX1wEQUrrv0PO8MvS8Sgn7WVrEX4pxzdoK6jkH4hj06hxi7RN6SWGJT1PUPojJjvAg0bPPNEiOUxJ2aDelErYKeDSA2yC5b6EiW+Y1QWf2nUiwoEwCnKDJFbHFiOdBQpN/DknQfQhkc8tRjiwDZxcLL4EkTxMgqRCfLGENG/Xbigqgl4cV7NJoh1Ra8DHnN64cn4FkXkzlWAMlrHcB/iuE/A9nK/mHGtgILkbdA5Kbd0ulkJajsBvq6hZK2pNXDrQ1kBzP90CcILvQSh0PiZ3v5Vj/uSqtZPvsg6iEo9yjEoy1p9oYIGjAoE0V8Kct4UpyQAyAZDNrxGrTtJqPqhJLuBstYKuAX4XglAMhOUQ7GqTUNEa9FST/6V58z+4hs/tsSDrLayBpAb0WWI4aR6GCk8qDPEBZTIRg9DtBcjj0DNmdwatgZbFFDBrQvArqN0g5HlOF2Bw84XdjsA48pYQ9CCSV+oYSpHPYUNYDIQnVA0jm+4MV/vduAsvfahTwehBa1/MQjuuWIQrYWshbAfg+zz0tZENQtABEoa1jO6HOhwRdnAzZymkMZAufybSgMxVE4nkqeipqHoFpFdx/cIrLotl4wq8rmMHEoKj1SJsweUvYqL2c7DLjm5AQ2za1LU+9MVargLeAJHAfi08mvn4CEvgwn99tANkxZF/IDhZ9IZuP7gDg6BZUAsZJrgQnd8RbrN+vIc68b0CS3/ePsaWPve8QTmorI/STtyB+gmyM6KXBvP+a1IJqGkt4NoQ50iemJdzeag6yZreEraIbBCHxewD+QfihiwPOUAGuX0fStH2vbfg+Y5VF/l0q1hMh2x79mceNnEjGQPY/W0NldQQkKCFo4XBuE2Il+ypv9DRaxeMQLxKuksH7OgewF8OC6qusYS8dnmgGetpiAP+M6efpqbboSktCStgOiNEohHc+pRI/T+bnEQDOrJMi8xS08AdOEIB42MdDQm871FI943zugGy99DXO9AHhid1bcbPAMlzjnLNL9mzIflxP1EAR6/zOL8WkN/VDIfFPqoSbY6NWw/Ed1clmV2U7pvlp4ithL2Zo5wp1j6sg6QMDAGdAcOJcjRWZxTXPpyUMiOf+cIhTKKtoajknk5qGTB6j8s3xmosSyF6GJsb5coSP8my7fAy5LwzZdaXUBHlHjB0urMNwx3RYNh0ufA9llI3RVz6f4vvxlLCbcq5YWYOCE24Qr2mD4K0/VPe7E8AXI2zwWC0MsTUVaJ4K4ghauFll/YUphwDCY3wYQlc7Xyne7SF0L7OOWMNhxTIsXockzfbLDBYNMeQinG+hkMfZvlEmNZ3EJ2VHNFdq1ek0cKLQv6wcvwzB94N0VROtwQIHU/SKzIjvQ3iDBhIs0FtZkDfRirRL3qtqOJjs+x0LocxlqEg/UPS4TIilb/HJyzm77wPZPXokJxO7S/M+n5EB1qlWNCZCisk5EZeYRsXx3xEDFw4g9LrNQvbES0vjlHAeshu1F8NAGgkJ7kkhiYhKeAIk+OKX6jsvBB9aAtkex4NQvL7lOIDO5u+AMBAm1cCi9JSS3V0phxud7XnyzgRgfztXWc9dEKfDg5DggnbWY298NnIW90S0fLGW1vZwjCWmtYAu5eRYzhq2iro7ZH88k1pQaKYgoT9CKKmZCIaV7R9nR1xhp0oY4kzbg432SzUDhjXslYQkAgAXEHboUor2+yqT0aQa4EK+2o5mCwr3CUIlWeXgmYSChzajZucz2bE6ITsTj4M452we3Tmc9ddlPMs6XLaD0IlKLRntIHyD7RwVL7d9aDEkHaYfEZIIuMLZW+HXaWl8/pI1AI5Xq0VTpn/laSSdoFbLqSIuodCupZUbcMDsE7KnlGU8vATJquVT2d0G4Y9a6/Q1CC/Xo4LuXyNcaJjiIr7o3P8KLoMfgITw2sG/C//PQHaXvlvBFh9CaG3bALi6wfHnXg3lnVX83R9FmGjsIDwvIh4clkvgDwD+L0JOYk/x12/hxNilnEJeDULcU8UQXY4vQGicmYjYsAHwGwjO36WSQfk1yhXTskrYZpA6Wg2Qs4ssO6wwfg7BVAEJ0LhC/eZBQHxAeJ+jnQHmJZCy0PXUrqGAuyA0ucP4Pu3OZLO1yvD1mOoogRqUq5pAoMbZLy2rjkyEw3eu0zsp5yCRhXdxUjIlBoVV1rfx/Li5o40KJT8BEp1YThFbmQyC0CAPV+HaJqRNMs7WTWGHe67nbKOTluiK+Kc0cIo5v8MopPdD0rG2O3s8RpGjHyLH7Lq0kYSvMNtHUEgDNx6ScyGM72u/O4YYUQDgq5DAiLW8X4cSQF9HKKaKbeY9tZQejfBkMbsqbPcGKtU2pVSspTVEzcyes4RGA3Gs7hCHpw68yKkjH+EInOtsJ90UQiGcCknGU4zPbRQU8CKAb8e0gMMmlFUQbvJUtnm+xErDKskBtKKfoDLeMKRN8mU2dg0717J6NkWB955axNEiMwNI1OUdKsNeOTm20VCbCgme2sRJ4l9KjkGIHHOO4h2hUul6rRi2rHMm3AvBhttQiHwrRuJeCeBCCsOHYMFH8z7dSjyzD4RFsYhLm9UxCf1r+d7HKGXxpjpnqBr4zypHHiBRdT/h5xMgFKq1Zba5qVfYpbUs9iYc8haEuTCLUNGHbKvFfKeFRTq/tXj7UoZDIDk0tgGwLRU8iihgnTYzSzjn23yuV+W+bxYf3g3CTjkBpXcK8dREtAuPJRBs+hkIF3w+hGK3okhuA58WdTcAw1V7bAwJCtmAffb+dIeYWGUt2+1VroqjynEMJGFWBySL4RSID2YB5ejSJW1f7s7VW08q2/Uoz035/3BCa9e2ohyzIQoOEYB366x5AMIh3IIN3IMDdqzK8DXHAesPgiQmB4C/l8lPi5AUedtDnGvj+A5/osLqxvdfpM7fggPWOKHWYyABJbezU7xRRKF1NmDHhe5UFENQ3b5oXgmOsO8khLdLc7vUW0sM+ELHYZZE0u01tIYeJV44yom08h3oSueFHgChPe0csR28NH9wzaCyPIBfQJLw/0KN+cDZjEDL0f7WB+IU3i5BOWZaGY7w1AA5DJ+OiCtlDa/hchW0OPpRiezBc2ZBuMXao75WLS8GRWhkK8hzAMwkbLI7v58H2ZFYD6Z/qfsdqhSMT6V6jsJ9j+AkMIuThT1m8/g3CpxVv860oI/YVp3q6HKW8V6Jwyganl7u+c6S3nMcdrdDUmBeqH5LSlEF6v3uo2V+OiSgI6N8Cu5y1FeWrn3vLqWci7UB1HJWt+VaFfmXSSBXR9wj6VwhcbeST0oRZwD8hauUE2mQ+QrLDRw5eo4fJq4cc5SdPlYnkCahoXL0VaN8QSnPKVRMfhm8x1NwQm8U9kPrz98eZSP7IQB/RmG0USq0p+K0Wit6Py5rfGXhvUrrF5B8wj9Snc9np9mbHcbWoy9nZ3v05bExFUU9saZOtk1PWvft6mhTiipX5nAtS0/JWzs6Akhin/MggRJHcWKt1a4jRk3iHZDUo1sTXnoQhYCbjONI85zJxw/BFcMOqyx0W3ajsbC2ipWOR3l4zjsWO9qcXa2RENc7G+HZviP7pHd86SAUMJYr3ZtpIPlF5GhCrOV8hL6cpez00YP3+KiKumjZlGvLrJJnYnCEVS77qwa5FOVzPxjl2AIxyoOJERlILokbnJkTKMSUB8Q5oy65vwvgJD7neeK5eWei8KjELqDFHHCpNBPC5rCd4SlIgMpBdBKMcjBFQwG/RLijHrkkbEd7lJb+BpwENqY1PpArjQHseJUk5F9JXHYxrfynqIBfVvXzYyRuT2qnkFUcuDeznhPYT3aCcLsH8shUsUXPMkJVs1nn6RA65RsV1jevcpREoWDmOXBXJtR+XaxPLmIEo1V+q2q848v9PAYS9htP6HAjCK10QBVy7GD7LYNkSnyVxwyVvzqoYDJbyPGej9CWVo6LkmpAzxhjHUL3QPIpzOcAWFTCEvaUNfMcregVaqbKQvjGv1L3sJV7FpKkZQmAzfm3UqdP2Pv5iu98Eb+7HuJgalOWedCCTtT+7Nx9uPIYzHYbwv8DByObz467jJ13IeW6vMn223OXqe57DSZ0tR7EudbOAd3dOd9SDK0VtoD17mA/W4RkA14GxVgh2fGyGuKAqrb05qQcxIAPArZB0AA5AuI0H8D3HsbzBrNf55375ADM5eclqv92sP26EhxXA5UO8uosx09YU3mFBXdGAMoNlegYfu6rImNupgLOKos6DyFt78B7TGXjRlWILiG7GDXGKvyL2eEmQhKa6zoGIbswl7NQ662Qwihj1opN+hn5BnuU3cT07rt9gMKuv0koT5fHXKkFOL+BbbYyQau6HnIMODnOQ20CNCrFu3MNluMnLOEbITtlgNjOtBJ0Dzvb3Q4JD+5U2wj9ntDByhDs6ilazQbC551Sw/3o1rWM/i5joFoHRFrv5HBZE7NPmhZ/drURutXKMemUAg1tSz1TTVYv8x0UHFl+CR7qYfy/O63aU6nIO5ycDXlIVrXteb4NDKklp88o55O3jlCDTITAhHJBHCatd+JJ8+vNTmj0s1HljtbVytGsQ3KEZ4zxFJzwIoQADUiGtJscFoUeFD6A30Ki5e4AcB2Er+srtgKI91yEAjl/MSSnxOx1OHl6WtKSlrREVsLamXUYJE+ApZZcB6EQzUD5jEna8rWzxMGQrGyb8/8lAA5AIZLNtECSjjS/QFrSkpaaK2GtTE9UCdkBoZE9B+ENd0Ki5J5UuLDei8re7ChCGhPUs96BBEc8W0McOC1pSUtaWlYJa4v4IEjCjWEh18yC5CLIFeEhZiCUKL1F9r2QHY7no3wWrWIg+DhIPtNudbBMLU/4XQjLoiPtKmlJS1pQ49wRmt51H4TJcAQE8x0N4fi1Q3bgyIfguUYp8d9DQoafgiSjmays7VyF73oVhPhd7/IaJJNXar2nJS1pqbklXCwIYj2Igy0LiT4zETDdwRByNRzoAhUGZJwGSdzTqw7YsK3fmwCOhGDiXooNpyUtaamXEoaTvMVUSYxPyoIcSGu81vuP2fsvRiFwJS1pSUtaEi//D0M0Lvw/1seZAAAAAElFTkSuQmCC"><div class="sep"></div><div class="sub">BIM Management</div></div>
+  <div class="ttl"><h1>Optimizador IFC</h1><p>Reducción de tamaño de modelos IFC pesados · procesado local en streaming</p></div>
+  <div class="tags"><span class="pill ok">● Sin subida a servidor</span><span class="pill">Lectura por bloques · Web Worker</span><span class="pill">Chrome / Edge</span></div>
+</header>
+
+<main>
+  <section class="col">
+    <div class="card">
+      <h2><span class="n">1</span>Archivo IFC</h2>
+      <div class="drop" id="drop">
+        <b>Arrastra aquí el .ifc o haz clic para seleccionarlo</b>
+        <small>El archivo no se carga entero en memoria: se lee por bloques de 16 MB directamente del disco.</small>
+        <input type="file" id="fileIn" accept=".ifc" hidden>
+      </div>
+      <div class="finfo" id="finfo"></div>
+      <details class="adv">
+        <summary>Avanzado · memoria para detección de duplicados</summary>
+        <div class="row">
+          <select class="inp" id="hashMB">
+            <option value="256">256 MB (equipos con 8 GB de RAM)</option>
+            <option value="512" selected>512 MB (recomendado)</option>
+            <option value="1024">1 GB (modelos &gt; 5 GB, 32 GB de RAM)</option>
+            <option value="2048">2 GB (estaciones de trabajo)</option>
+          </select>
+        </div>
+        <div class="note">Si la tabla se llena, la detección de duplicados sigue funcionando pero deja de registrar entidades nuevas (el resultado es igualmente válido, solo algo menos compacto). Cambiarlo requiere volver a analizar.</div>
+      </details>
+      <details class="adv" id="advSave">
+        <summary>Avanzado · método de guardado</summary>
+        <div class="row">
+          <select class="inp" id="saveMode">
+            <option value="auto" selected>Automático (Guardar como… y, si el navegador lo bloquea, descarga)</option>
+            <option value="picker">Solo «Guardar como…» (escritura directa a disco)</option>
+            <option value="download">Descarga del navegador (carpeta de descargas)</option>
+          </select>
+        </div>
+        <div class="note">«Guardar como…» escribe el resultado directamente en disco mientras se genera. Algunas configuraciones de Edge (políticas corporativas, SmartScreen) bloquean esa escritura; la descarga funciona siempre, pero el navegador guarda el resultado temporalmente antes de entregarlo.</div>
+      </details>
+    </div>
+
+    <div class="card" id="cardOpts">
+      <h2><span class="n">2</span>Optimizaciones</h2>
+      <div id="opts"></div>
+      <div class="actions">
+        <button class="btn pri" id="btnRun" disabled>Optimizar y guardar…</button>
+        <button class="btn dan" id="btnCancel" disabled>Cancelar</button>
+      </div>
+      <div class="note" id="runStatus" style="min-height:1.2em"></div>
+    </div>
+  </section>
+
+  <section class="col">
+    <div class="card prog" id="prog">
+      <h2>Progreso</h2>
+      <div class="plabel" id="pLabel">—</div>
+      <div class="pbar"><i id="pBar"></i></div>
+      <div class="pmeta"><span id="pDone">—</span><span id="pSpeed">—</span><span id="pEta">—</span></div>
+      <div class="steps" id="steps"></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="l">Tamaño</div><div class="v" id="kSize">—</div><div class="s" id="kSize2">&nbsp;</div></div>
+      <div class="kpi"><div class="l">Entidades</div><div class="v" id="kEnt">—</div><div class="s" id="kEnt2">&nbsp;</div></div>
+      <div class="kpi"><div class="l">Esquema</div><div class="v" id="kSch">—</div><div class="s" id="kSch2">&nbsp;</div></div>
+      <div class="kpi"><div class="l">Memoria estimada</div><div class="v" id="kRam">—</div><div class="s" id="kRam2">&nbsp;</div></div>
+    </div>
+
+    <div class="card" id="cardEst">
+      <h2>Estimación de resultado</h2>
+      <div id="estBody" class="empty">Selecciona un archivo para analizarlo.</div>
+    </div>
+
+    <div class="card" id="cardRep" style="display:none">
+      <h2>Resultado de la optimización</h2>
+      <div id="repBody"></div>
+    </div>
+
+    <div class="card">
+      <h2>Peso por clase IFC</h2>
+      <div id="typesBody" class="empty">Sin datos todavía.</div>
+    </div>
+
+    <div class="card">
+      <h2>Registro</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================
+     WORKER: parser STEP en streaming (no usa web-ifc ni carga el
+     archivo completo). Todo el estado por entidad vive en arrays
+     tipados indexados por #id (6 bytes por id).
+     ============================================================ -->
+<script id="worker-src" type="text/plain">
+'use strict';
+/* ---------- flags por entidad ---------- */
+const EX=1,RM=2,PR=4,RT=8,IN=16,MAT=32,PS=64,KP=128;
+const CH=16*1024*1024;
+const P10=new Float64Array(400);P10[0]=1;for(let i=1;i<400;i++)P10[i]=P10[i-1]*10;
+const DG=new Uint8Array(32);
+class V32{constructor(n){this.a=new Uint32Array(n||1024);this.n=0}push(v){if(this.n===this.a.length){const b=new Uint32Array(this.a.length*2);b.set(this.a);this.a=b}this.a[this.n++]=v}reset(){this.n=0}}
+
+/* ---------- conocimiento mínimo del esquema ---------- */
+const SPATIAL=new Set(['IFCSITE','IFCBUILDING','IFCBUILDINGSTOREY','IFCSPACE','IFCFACILITY','IFCBRIDGE','IFCROAD','IFCRAILWAY','IFCTUNNEL','IFCMARINEFACILITY','IFCFACILITYPART','IFCFACILITYPARTCOMMON','IFCBRIDGEPART','IFCROADPART','IFCRAILWAYPART','IFCTUNNELPART','IFCMARINEPART','IFCSPATIALZONE','IFCEXTERNALSPATIALELEMENT']);
+const NOT_ELEMENT=new Set([...SPATIAL,'IFCPROJECT','IFCOPENINGELEMENT','IFCOPENINGSTANDARDCASE','IFCVOIDINGFEATURE','IFCANNOTATION','IFCGRID','IFCALIGNMENT','IFCALIGNMENTHORIZONTAL','IFCALIGNMENTVERTICAL','IFCALIGNMENTCANT','IFCALIGNMENTSEGMENT','IFCREFERENT','IFCDISTRIBUTIONPORT','IFCPORT','IFCGEOGRAPHICELEMENT','IFCLINEARPOSITIONINGELEMENT','IFCVIRTUALELEMENT']);
+const DEDUP_GEO=new Set(['IFCCARTESIANPOINT','IFCDIRECTION','IFCAXIS2PLACEMENT2D','IFCAXIS2PLACEMENT3D','IFCAXIS1PLACEMENT','IFCPOLYLINE','IFCCARTESIANPOINTLIST2D','IFCCARTESIANPOINTLIST3D','IFCINDEXEDPOLYCURVE','IFCINDEXEDPOLYGONALFACE','IFCINDEXEDPOLYGONALFACEWITHVOIDS','IFCVECTOR','IFCLINE','IFCCIRCLE','IFCELLIPSE','IFCTRIMMEDCURVE','IFCCOMPOSITECURVE','IFCCOMPOSITECURVESEGMENT','IFCCARTESIANTRANSFORMATIONOPERATOR3D','IFCCARTESIANTRANSFORMATIONOPERATOR3DNONUNIFORM','IFCCARTESIANTRANSFORMATIONOPERATOR2D','IFCRECTANGLEPROFILEDEF','IFCRECTANGLEHOLLOWPROFILEDEF','IFCCIRCLEPROFILEDEF','IFCCIRCLEHOLLOWPROFILEDEF','IFCISHAPEPROFILEDEF','IFCLSHAPEPROFILEDEF','IFCTSHAPEPROFILEDEF','IFCUSHAPEPROFILEDEF','IFCCSHAPEPROFILEDEF','IFCARBITRARYCLOSEDPROFILEDEF','IFCARBITRARYPROFILEDEFWITHVOIDS','IFCARBITRARYOPENPROFILEDEF','IFCPLANE','IFCHALFSPACESOLID','IFCPOLYGONALBOUNDEDHALFSPACE','IFCCOLOURRGB','IFCSURFACESTYLERENDERING','IFCSURFACESTYLESHADING','IFCSURFACESTYLE','IFCPRESENTATIONSTYLEASSIGNMENT','IFCCURVESTYLE','IFCFILLAREASTYLE','IFCDRAUGHTINGPREDEFINEDCOLOUR','IFCDRAUGHTINGPREDEFINEDCURVEFONT','IFCDIMENSIONALEXPONENTS']);
+const DEDUP_PROP=new Set(['IFCPROPERTYSINGLEVALUE','IFCPROPERTYENUMERATEDVALUE','IFCPROPERTYENUMERATION','IFCPROPERTYLISTVALUE','IFCPROPERTYBOUNDEDVALUE','IFCPROPERTYTABLEVALUE','IFCCOMPLEXPROPERTY','IFCQUANTITYLENGTH','IFCQUANTITYAREA','IFCQUANTITYVOLUME','IFCQUANTITYCOUNT','IFCQUANTITYWEIGHT','IFCQUANTITYTIME']);
+const ROUND_LEN=new Set(['IFCCARTESIANPOINT','IFCCARTESIANPOINTLIST2D','IFCCARTESIANPOINTLIST3D','IFCEXTRUDEDAREASOLID','IFCCIRCLE','IFCRECTANGLEPROFILEDEF','IFCRECTANGLEHOLLOWPROFILEDEF','IFCCIRCLEPROFILEDEF','IFCCIRCLEHOLLOWPROFILEDEF','IFCISHAPEPROFILEDEF','IFCLSHAPEPROFILEDEF','IFCTSHAPEPROFILEDEF','IFCUSHAPEPROFILEDEF','IFCCSHAPEPROFILEDEF','IFCBOUNDINGBOX']);
+const ROUND_UNIT=new Set(['IFCDIRECTION','IFCTRIANGULATEDFACESET']);
+const NONROOT_PREFIX=['IFCPROPERTYSINGLE','IFCPROPERTYENUM','IFCPROPERTYLIST','IFCPROPERTYBOUNDED','IFCPROPERTYTABLE','IFCPROPERTYREFERENCE','IFCCOMPLEXPROPERTY','IFCQUANTITY','IFCMATERIAL','IFCCLASSIFICATION','IFCPERSON','IFCORGANIZATION','IFCAPPLICATION','IFCDOCUMENT','IFCLIBRARY','IFCSURFACESTYLE','IFCPRESENTATION','IFCTEXT','IFCCURVESTYLE','IFCFILLAREASTYLE','IFCCOLOUR','IFCPROJECTEDCRS','IFCACTORROLE','IFCPOSTALADDRESS','IFCTELECOMADDRESS','IFCEXTERNALREFERENCE','IFCSTYLEDITEM'];
+const INDEP_NAMES=new Set(['IFCPRESENTATIONLAYERASSIGNMENT','IFCPRESENTATIONLAYERWITHSTYLE','IFCINDEXEDCOLOURMAP','IFCMATERIALDEFINITIONREPRESENTATION','IFCMAPCONVERSION','IFCMAPCONVERSIONSCALED','IFCRIGIDOPERATION','IFCDIMENSIONCURVE','IFCPROJECTIONCURVE','IFCTERMINATORSYMBOL','IFCDIMENSIONCURVETERMINATOR','IFCSTYLEDITEM']);
+const PROFILES=new Set(['IFCRECTANGLEPROFILEDEF','IFCRECTANGLEHOLLOWPROFILEDEF','IFCCIRCLEPROFILEDEF','IFCCIRCLEHOLLOWPROFILEDEF','IFCISHAPEPROFILEDEF','IFCLSHAPEPROFILEDEF','IFCTSHAPEPROFILEDEF','IFCUSHAPEPROFILEDEF','IFCCSHAPEPROFILEDEF']);
+const QUANTS=new Set(['IFCQUANTITYLENGTH','IFCQUANTITYAREA','IFCQUANTITYVOLUME','IFCQUANTITYCOUNT','IFCQUANTITYWEIGHT','IFCQUANTITYTIME']);
+const HCODE={IFCOWNERHISTORY:1,IFCPROJECT:2,IFCRELAGGREGATES:3,IFCRELCONTAINEDINSPATIALSTRUCTURE:4,IFCRELDEFINESBYPROPERTIES:5,IFCRELDEFINESBYTYPE:6,IFCPROPERTYSINGLEVALUE:7,IFCPROPERTYENUMERATEDVALUE:8,IFCPROPERTYSET:10,IFCELEMENTQUANTITY:11,IFCSIUNIT:12,IFCCONVERSIONBASEDUNIT:13,IFCMEASUREWITHUNIT:14,IFCUNITASSIGNMENT:15,IFCSHAPEREPRESENTATION:16,IFCPRODUCTDEFINITIONSHAPE:17,IFCCARTESIANPOINT:18,IFCPOLYLINE:19,IFCCARTESIANPOINTLIST2D:20,IFCCARTESIANPOINTLIST3D:21,IFCINDEXEDPOLYCURVE:22,IFCARBITRARYCLOSEDPROFILEDEF:24,IFCARBITRARYPROFILEDEFWITHVOIDS:25,IFCEXTRUDEDAREASOLID:26,IFCEXTRUDEDAREASOLIDTAPERED:27,IFCTRIANGULATEDFACESET:28,IFCPOLYGONALFACESET:28,IFCBOUNDINGBOX:29,IFCBOOLEANRESULT:30,IFCBOOLEANCLIPPINGRESULT:30,IFCMAPPEDITEM:31,IFCREPRESENTATIONMAP:32,IFCCARTESIANTRANSFORMATIONOPERATOR3D:33,IFCCARTESIANTRANSFORMATIONOPERATOR3DNONUNIFORM:34};
+const GEO={IFCCARTESIANPOINT:1,IFCPOLYLOOP:2,IFCFACEOUTERBOUND:3,IFCFACEBOUND:3,IFCFACE:4,IFCCONNECTEDFACESET:5,IFCCLOSEDSHELL:5,IFCOPENSHELL:5};
+const DEP={IFCRELVOIDSELEMENT:1,IFCRELAGGREGATES:2,IFCRELNESTS:2,IFCRELDEFINESBYTYPE:3};
+const MARKERS=new Set(['-','--','---','N/A','NA','N.A.','N.D.','ND','?']);
+const SI_PREFIX={EXA:1e18,PETA:1e15,TERA:1e12,GIGA:1e9,MEGA:1e6,KILO:1e3,HECTO:1e2,DECA:1e1,DECI:1e-1,CENTI:1e-2,MILLI:1e-3,MICRO:1e-6,NANO:1e-9,PICO:1e-12};
+
+/* ---------- estado global ---------- */
+let file=null,fileSize=0,dataStart=0,dataEnd=0,schema='',origin='',fileNameHdr='';
+let segs=[];
+let cap=0,flags=new Uint8Array(0),refc=new Uint8Array(0),remap=new Uint32Array(0);
+let types=[],typeByHash=new Map();
+let starts=new Int32Array(1<<20),ends=new Int32Array(1<<20);
+let T0=0,T1=0,A0=0,HH=0;
+let OUT=new Uint8Array(1<<22);
+let OPT={},STRNULL=false,decLen=-1,decUnit=-1;
+let spatialRedirect=new Map();
+let reasons=Object.create(null),markedF=0,needAnother=false,cancelled=false;
+let H1=0,H2=0,txP=0,txTop=0;
+const wr=new Int32Array(256),dr=new Uint8Array(256),es=new Int32Array(256),attrPos=new Int32Array(512);
+let htH1=null,htH2=null,htId=null,htMask=0,htCount=0,htLimit=0,htFull=false;
+
+/* datos semánticos del análisis */
+let nEnt=0,nRefs=0,refDigits=0,idDigits=0,fwdRefs=0,maxSeen=0,dupIds=0;
+let ohIds,projectId=0,spatial,aggP,aggC,contained,rdbpRel,rdbpPset,rdbpOff,objPool,psOrd,relOrd;
+let emptyIdV,emptyBitsV,catN,catB,psetIdV,psetNmV,psetNames,psetNameIdx,psetBytes,psetCnt,propCount,propBytes;
+let qvolI,eqVol,siUnits,convUnits,measures,unitAssign,classIds,repIdV,repIdentV,identStats,identIdx,repOff,repPool,pdsOff,pdsPool;
+let pt2,polyArea,pl2A,pl3V,profA,itemV,boolI,mappedI,repMapI,volScale;
+let prodId,prodPds,prodType,prodVol,typeObjIds,usedTypes,sbIds,decorRefs,softRef;
+let dupGN=0,dupGB=0,dupPN=0,dupPB=0,precSave,sampleCtr=0,psH1,psH2,psId;
+let unusedPsets,unusedMats,unusedCls,preOrph,unusedTypes,emptySpaceIds,allSpaceIds,flattenIds,spaceParent,spatialSet;
+let lengthFactor=1,volFactor=1,absorbed=new Map();
+
+function resetAnalysis(){
+  nEnt=nRefs=refDigits=idDigits=fwdRefs=maxSeen=dupIds=0;
+  ohIds=new V32(16);projectId=0;spatial=new Map();aggP=new V32();aggC=new V32();contained=new Map();
+  rdbpRel=new V32(1<<16);rdbpPset=new V32(1<<16);rdbpOff=new V32(1<<16);objPool=new V32(1<<18);
+  emptyIdV=new V32(1<<16);emptyBitsV=new V32(1<<16);catN=[0,0,0,0,0];catB=[0,0,0,0,0];
+  psetIdV=new V32(1<<16);psetNmV=new V32(1<<16);psetNames=[];psetNameIdx=new Map();psetBytes=0;psetCnt=0;propCount=0;propBytes=0;
+  qvolI=new Map();eqVol=new Map();siUnits=new Map();convUnits=new Map();measures=new Map();unitAssign=[];classIds=new V32();
+  repIdV=new V32(1<<16);repIdentV=new V32(1<<16);identStats=[];identIdx=new Map();repOff=new Map();repPool=new V32(1<<18);pdsOff=new Map();pdsPool=new V32(1<<16);
+  pt2=new Map();polyArea=new Map();pl2A=new Map();pl3V=new Map();profA=new Map();itemV=new Map();boolI=new Map();mappedI=new Map();repMapI=new Map();volScale=new Map();
+  prodId=new V32(1<<16);prodPds=new V32(1<<16);prodType=new V32(1<<16);typeObjIds=new V32();usedTypes=new Set();sbIds=new V32();decorRefs=new V32();softRef=new Map();
+  dupGN=dupGB=dupPN=dupPB=0;precSave=new Float64Array(10);sampleCtr=0;psH1=new V32(1<<14);psH2=new V32(1<<14);psId=new V32(1<<14);
+}
+
+/* ---------- utilidades ---------- */
+let lastProg=0;
+function prog(phase,label,done,total,force){const n=Date.now();if(!force&&n-lastProg<150)return;lastProg=n;self.postMessage({type:'progress',phase,label,done,total})}
+function log(msg,level){self.postMessage({type:'log',msg,level:level||''})}
+function read(off,len){return file.slice(off,Math.min(fileSize,off+len)).arrayBuffer().then(b=>new Uint8Array(b))}
+function ensureCap(id){
+  if(id<cap)return;
+  const nc=Math.max(id+1,Math.floor(cap*1.25)+65536);
+  let f=new Uint8Array(nc);f.set(flags);flags=f;
+  f=new Uint8Array(nc);f.set(refc);refc=f;
+  const m=new Uint32Array(nc);m.set(remap);remap=m;cap=nc;
+}
+function growSE(){let a=new Int32Array(starts.length*2);a.set(starts);starts=a;a=new Int32Array(ends.length*2);a.set(ends);ends=a}
+function ensureOut(n){if(OUT.length<n)OUT=new Uint8Array(Math.ceil(n*1.5))}
+function nd(x){return x<10?1:x<100?2:x<1e3?3:x<1e4?4:x<1e5?5:x<1e6?6:x<1e7?7:x<1e8?8:x<1e9?9:10}
+function latin(buf,a,b){let s='';for(let i=a;i<b;i++)s+=String.fromCharCode(buf[i]);return s}
+
+/* Escanea un bloque y localiza entidades completas #id=TIPO(...); */
+function scan(buf){
+  const len=buf.length;let i=0,n=0,consumed=0,endsec=-1;
+  while(i<len){
+    const c=buf[i];
+    if(c===35){
+      let j=i+1,inS=false;
+      for(;j<len;j++){const d=buf[j];if(d===39)inS=!inS;else if(d===59&&!inS)break}
+      if(j>=len)break;
+      if(n>=starts.length)growSE();
+      starts[n]=i;ends[n]=j+1;n++;i=j+1;consumed=i;continue;
+    }
+    if(c===69&&buf[i+1]===78&&buf[i+2]===68&&buf[i+3]===83){endsec=i;break}
+    if(c===47&&buf[i+1]===42){let j=i+2;while(j<len-1&&!(buf[j]===42&&buf[j+1]===47))j++;if(j>=len-1)break;i=j+2;consumed=i;continue}
+    i++;
+  }
+  return{n,consumed,endsec};
+}
+function head(buf,s){
+  let i=s+1,id=0,c;
+  while((c=buf[i])>=48&&c<=57){id=id*10+c-48;i++}
+  while(buf[i]!==61)i++;i++;
+  while((c=buf[i])===32||c===10||c===13||c===9)i++;
+  T0=i;let h=0x811c9dc5;
+  while((c=buf[i])!==40&&c!==32&&c!==10&&c!==13){h=Math.imul(h^c,16777619);i++}
+  T1=i;HH=h>>>0;
+  while(buf[i]!==40)i++;
+  A0=i+1;return id;
+}
+function argsEnd(buf,e){let j=e-2;while(buf[j]!==41)j--;return j}
+
+function newType(buf){
+  const name=latin(buf,T0,T1);
+  let i=A0;while(buf[i]===32)i++;
+  let rooted=false;
+  if(buf[i]===39){let j=i+1;while(j<i+40&&buf[j]!==39)j++;
+    if(j-i-1===22&&buf[j]===39){rooted=true;for(let k=i+1;k<j;k++){const c=buf[k];if(!((c>=48&&c<=57)||(c>=65&&c<=90)||(c>=97&&c<=122)||c===95||c===36)){rooted=false;break}}}}
+  if(rooted&&NONROOT_PREFIX.some(p=>name.startsWith(p)))rooted=false;
+  const psetLike=name==='IFCPROPERTYSET'||name==='IFCELEMENTQUANTITY';
+  if(psetLike)rooted=true;
+  const rel=rooted&&name.startsWith('IFCREL');
+  const indep=!rooted&&(INDEP_NAMES.has(name)||name.endsWith('RELATIONSHIP')||name.includes('OCCURRENCE')||name.endsWith('PROPERTIES')||name.includes('TEXTUREMAP')||name.startsWith('IFCTEXTURECOORDINATE'));
+  const mat=!rooted&&!indep&&name.startsWith('IFCMATERIAL');
+  const typeObj=rooted&&!rel&&!psetLike&&(name.endsWith('TYPE')||name.endsWith('STYLE'));
+  const t={name,count:0,bytes:0,rooted,rel,psetLike,indep,mat,typeObj,
+    product:rooted&&!rel&&!psetLike&&!typeObj,
+    objLike:rooted&&!psetLike,
+    decor:name==='IFCMATERIALDEFINITIONREPRESENTATION'||name==='IFCEXTERNALREFERENCERELATIONSHIP'||name==='IFCMATERIALCLASSIFICATIONRELATIONSHIP'||(!rooted&&name.endsWith('PROPERTIES')),
+    cls:name==='IFCCLASSIFICATION'||name==='IFCCLASSIFICATIONREFERENCE',
+    spatial:SPATIAL.has(name),sb:name.startsWith('IFCRELSPACEBOUNDARY'),
+    spRel:name==='IFCRELCONTAINEDINSPATIALSTRUCTURE'||name==='IFCRELREFERENCEDINSPATIALSTRUCTURE',
+    wk:(name==='IFCPRESENTATIONLAYERASSIGNMENT'||name==='IFCPRESENTATIONLAYERWITHSTYLE')?1:((name==='IFCSTYLEDITEM'||name==='IFCINDEXEDCOLOURMAP'||name.includes('TEXTUREMAP'))?2:0),
+    geo:GEO[name]||0,
+    dg:DEDUP_GEO.has(name),dp:DEDUP_PROP.has(name),rl:ROUND_LEN.has(name),ru:ROUND_UNIT.has(name),
+    h:HCODE[name]||(PROFILES.has(name)?23:0)||(QUANTS.has(name)?9:0),dep:DEP[name]||0,
+    psh:name==='IFCPROPERTYSET'||name==='IFCELEMENTQUANTITY',
+    fb:EX|(rooted?RT:0)|(indep?IN:0)|(mat?MAT:0)|(psetLike?PS:0)};
+  types.push(t);typeByHash.set(HH,types.length-1);return types.length-1;
+}
+
+/* ---------- parser de argumentos (solo para entidades semánticas) ---------- */
+let PP=0;const STAR={star:1};
+function decStr(buf,a,b){
+  let s=latin(buf,a,b).replace(/''/g,"'");
+  if(s.indexOf('\\')>=0){
+    s=s.replace(/\\X2\\([0-9A-F]+)\\X0\\/gi,(m,h)=>{let o='';for(let i=0;i+3<h.length;i+=4)o+=String.fromCharCode(parseInt(h.substr(i,4),16));return o})
+       .replace(/\\X\\([0-9A-F]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16)))
+       .replace(/\\S\\(.)/g,(m,c)=>String.fromCharCode(c.charCodeAt(0)+128));
+  }
+  return s;
+}
+function PA(buf,e){PP=A0;return pList(buf,e)}
+function pList(buf,e){const out=[];while(PP<e){const c=buf[PP];if(c===41){PP++;return out}if(c===44||c<=32){PP++;continue}out.push(pVal(buf,e))}return out}
+function pVal(buf,e){
+  const c=buf[PP];
+  if(c===35){PP++;let n=0,d;while((d=buf[PP])>=48&&d<=57){n=n*10+d-48;PP++}return{r:n}}
+  if(c===39){const st=++PP;for(;;){if(buf[PP]===39){if(buf[PP+1]===39){PP+=2;continue}break}PP++}const s=decStr(buf,st,PP);PP++;return s}
+  if(c===36){PP++;return null}
+  if(c===42){PP++;return STAR}
+  if(c===46&&buf[PP+1]>=65&&buf[PP+1]<=90){const st=++PP;while(buf[PP]!==46)PP++;const v=latin(buf,st,PP);PP++;return{e:v}}
+  if(c===40){PP++;return pList(buf,e)}
+  if(c>=65&&c<=90){const st=PP;while(buf[PP]!==40)PP++;const nm=latin(buf,st,PP);PP++;const a=pList(buf,e);return{t:nm,v:a[0],a}}
+  const st=PP;while(PP<e){const d=buf[PP];if((d>=48&&d<=57)||d===45||d===43||d===46||d===69||d===101)PP++;else break}
+  if(PP===st){PP++;return null}
+  return parseNum(buf,st,PP);
+}
+const refOf=x=>(x&&x.r)||0, enumOf=x=>(x&&x.e)||'';
+function valOf(x){if(typeof x==='number')return x;if(x&&x.t!==undefined)return valOf(x.v);return undefined}
+function topAttrRef(buf,a0,a1,k){
+  let i=a0,depth=0,top=0,inS=false;
+  while(i<a1){const c=buf[i];
+    if(inS){if(c===39)inS=false;i++;continue}
+    if(c===39){inS=true;i++;continue}
+    if(c===40)depth++;else if(c===41)depth--;
+    else if(c===44&&depth===0){top++;if(top>k)return 0}
+    else if(c===35&&depth===0&&top===k){let r=0,j=i+1,d;while((d=buf[j])>=48&&d<=57){r=r*10+d-48;j++}return r}
+    i++}
+  return 0;
+}
+function parseNum(b,i,k){
+  let s=1,m=0,ex=0,fd=0,j=i,c=b[j],frac=false;
+  if(c===45){s=-1;j++}else if(c===43)j++;
+  for(;j<k;j++){c=b[j];
+    if(c>=48&&c<=57){if(m<1e16){m=m*10+(c-48);if(frac)fd++}else if(!frac)ex++}
+    else if(c===46)frac=true;
+    else if(c===69||c===101){j++;let sg=1;if(b[j]===45){sg=-1;j++}else if(b[j]===43)j++;let e=0;for(;j<k;j++)e=e*10+(b[j]-48);ex+=sg*e;break}}
+  const p=ex-fd;
+  return s*(p>=0?m*(p<400?P10[p]:Infinity):m/(-p<400?P10[-p]:Infinity));
+}
+function wInt(o,p,x){if(x<10){o[p++]=48+x;return p}let n=0;while(x>0){const q=Math.floor(x/10);DG[n++]=x-q*10;x=q}while(n>0)o[p++]=48+DG[--n];return p}
+function wStr(o,p,s){for(let i=0;i<s.length;i++)o[p++]=s.charCodeAt(i);return p}
+function wReal(o,p,v,d){
+  const m=P10[d];let k=Math.round(v*m);
+  if(!isFinite(k)||Math.abs(k)>9e15){let s=v.toExponential().toUpperCase();if(s.indexOf('.')<0)s=s.replace('E','.E');return wStr(o,p,s)}
+  if(k===0){o[p++]=48;o[p++]=46;return p}
+  if(k<0){o[p++]=45;k=-k}
+  const ip=Math.floor(k/m);let fp=k-ip*m;
+  p=wInt(o,p,ip);o[p++]=46;
+  if(fp>0){let n=0;for(let q=0;q<d;q++){const r=Math.floor(fp/10);DG[n++]=fp-r*10;fp=r}let lo=0;while(lo<n&&DG[lo]===0)lo++;for(let q=n-1;q>=lo;q--)o[p++]=48+DG[q]}
+  return p;
+}
+function resolve(r){let x=r,g=0;while(x<cap&&(flags[x]&RM)&&remap[x]&&g<64){x=remap[x];g++}return x}
+
+/* ---------- transformador de argumentos (núcleo) ----------
+   modos: 0=hash (resolución viva), 1=comprobación, 2=escritura (ids finales) */
+const M_HASH=0,M_CHECK=1,M_WRITE=2,ST_TOP=1,ST_EMP=2;
+function tx(buf,a0,a1,ti,mode,round,out,p){
+  let st=0,depth=0,top=0;attrPos[0]=p;es[0]=p;wr[0]=0;
+  const t=types[ti];
+  const nullEmpty=STRNULL&&t.objLike;
+  const redir=t.spRel&&spatialRedirect.size>0;
+  let i=a0;
+  while(i<a1){
+    const c=buf[i];
+    if(c===44){if(depth===0){out[p++]=44;top++;if(top<512)attrPos[top]=p}i++;continue}
+    if(c<=32){i++;continue}
+    if(c===41){
+      if(wr[depth]===0&&dr[depth]===1){st|=ST_EMP;if(depth===1){p=es[0];out[p++]=36;depth=0;i++;continue}}
+      out[p++]=41;depth--;i++;continue;
+    }
+    if(c===35){
+      let r=0,k=i+1,d;while((d=buf[k])>=48&&d<=57){r=r*10+d-48;k++}i=k;
+      let x,dead;
+      const rd=redir&&depth===0&&top===5?spatialRedirect.get(r):undefined;
+      if(mode===M_WRITE){x=rd!==undefined?remap[rd]:(r<cap?remap[r]:0);dead=x===0}
+      else{x=resolve(rd!==undefined?rd:r);dead=x<cap&&(flags[x]&RM)!==0}
+      if(dead){if(depth===0){es[0]=p;out[p++]=36;st|=ST_TOP}else dr[depth]=1;continue}
+      if(depth>0){if(wr[depth]>0)out[p++]=44;wr[depth]++}else es[0]=p;
+      out[p++]=35;p=wInt(out,p,x);continue;
+    }
+    if(depth>0){if(wr[depth]>0)out[p++]=44;wr[depth]++}else es[0]=p;
+    if(c===39){
+      let k=i+1;for(;;){if(buf[k]===39){if(buf[k+1]===39){k+=2;continue}break}k++}
+      if(nullEmpty&&depth===0&&k===i+1&&top>=2)out[p++]=36;
+      else for(let q=i;q<=k;q++)out[p++]=buf[q];
+      i=k+1;continue;
+    }
+    if(c===40){out[p++]=40;depth++;wr[depth]=0;dr[depth]=0;i++;continue}
+    if(c>=65&&c<=90){while(buf[i]!==40)out[p++]=buf[i++];out[p++]=40;depth++;wr[depth]=0;dr[depth]=0;i++;continue}
+    if(c===46&&buf[i+1]>=65&&buf[i+1]<=90){out[p++]=46;i++;while(buf[i]!==46)out[p++]=buf[i++];out[p++]=46;i++;continue}
+    if(c===36||c===42){out[p++]=c;i++;continue}
+    let k=i,isReal=false;
+    while(k<a1){const d=buf[k];if((d>=48&&d<=57)||d===45||d===43){k++;continue}if(d===46||d===69||d===101){isReal=true;k++;continue}break}
+    if(k===i){out[p++]=c;i++;continue}
+    if(round>=0&&isReal)p=wReal(out,p,parseNum(buf,i,k),round);
+    else for(let q=i;q<k;q++)out[p++]=buf[q];
+    i=k;
+  }
+  txP=p;txTop=top;return st;
+}
+function hashOut(o,a,b,seed){
+  let h1=(0x811c9dc5^Math.imul(seed+1,0x9e3779b1))>>>0,h2=(0x9747b28c^seed)>>>0;
+  for(let i=a;i<b;i++){const c=o[i];h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,0x5bd1e995);h2^=h2>>>13}
+  H1=h1>>>0;H2=(h2^(b-a))>>>0;
+}
+function htInit(mb){
+  let slots=1;const want=Math.floor(mb*1024*1024/12);while(slots*2<=want)slots*=2;
+  htH1=new Uint32Array(slots);htH2=new Uint32Array(slots);htId=new Uint32Array(slots);htMask=slots-1;htCount=0;htLimit=Math.floor(slots*0.72);htFull=false;
+}
+function htReset(){htId.fill(0);htCount=0;htFull=false}
+function htLookup(id){
+  let k=H1&htMask;
+  for(;;){const v=htId[k];
+    if(v===0){if(htCount<htLimit){htH1[k]=H1;htH2[k]=H2;htId[k]=id;htCount++}else htFull=true;return 0}
+    if(htH1[k]===H1&&htH2[k]===H2)return v;
+    k=(k+1)&htMask}
+}
+
+/* ---------- volúmenes aproximados ---------- */
+function shoelace(xy){let s=0;for(let i=0;i<xy.length;i++){const a=xy[i],b=xy[(i+1)%xy.length];s+=a[0]*b[1]-b[0]*a[1]}return Math.abs(s)/2}
+function numSpan(buf,i,a1){let k=i;while(k<a1){const d=buf[k];if((d>=48&&d<=57)||d===45||d===43||d===46||d===69||d===101)k++;else break}return k}
+function pl2Area(buf,a0,a1){
+  let i=a0,depth=0,idx=0,x0=0,y0=0,px=0,py=0,cx=0,s=0,n=0;
+  while(i<a1){const c=buf[i];
+    if(c===40){depth++;i++;continue}if(c===41){depth--;i++;if(depth===0)break;continue}
+    if(c===44&&depth===0)break;
+    if((c>=48&&c<=57)||c===45||c===43){const k=numSpan(buf,i,a1);const v=parseNum(buf,i,k);i=k;
+      if((idx&1)===0)cx=v;else{if(n===0){x0=cx;y0=v}else s+=px*v-cx*py;px=cx;py=v;n++}idx++;continue}
+    i++}
+  if(n<3)return -1;s+=px*y0-x0*py;return Math.abs(s)/2;
+}
+function pl3Box(buf,a0,a1){
+  let i=a0,depth=0,idx=0;const mn=[Infinity,Infinity,Infinity],mx=[-Infinity,-Infinity,-Infinity];
+  while(i<a1){const c=buf[i];
+    if(c===40){depth++;i++;continue}if(c===41){depth--;i++;if(depth===0)break;continue}
+    if(c===44&&depth===0)break;
+    if((c>=48&&c<=57)||c===45||c===43){const k=numSpan(buf,i,a1);const v=parseNum(buf,i,k);i=k;const a=idx%3;if(v<mn[a])mn[a]=v;if(v>mx[a])mx[a]=v;idx++;continue}
+    i++}
+  if(idx<3)return -1;return (mx[0]-mn[0])*(mx[1]-mn[1])*(mx[2]-mn[2]);
+}
+function profileArea(n,a){
+  const v=i=>{const x=valOf(a[i]);return typeof x==='number'?x:NaN};
+  switch(n){
+    case 'IFCRECTANGLEPROFILEDEF':return v(3)*v(4);
+    case 'IFCRECTANGLEHOLLOWPROFILEDEF':{const X=v(3),Y=v(4),t=v(5);return X*Y-Math.max(0,X-2*t)*Math.max(0,Y-2*t)}
+    case 'IFCCIRCLEPROFILEDEF':return Math.PI*v(3)*v(3);
+    case 'IFCCIRCLEHOLLOWPROFILEDEF':{const r=v(3),t=v(4);return Math.PI*(r*r-Math.max(0,r-t)**2)}
+    case 'IFCISHAPEPROFILEDEF':{const b=v(3),h=v(4),tw=v(5),tf=v(6);return 2*b*tf+(h-2*tf)*tw}
+    case 'IFCLSHAPEPROFILEDEF':{const d=v(3);let w=v(4);if(!(w>0))w=d;const t=v(5);return t*(d+w-t)}
+    case 'IFCTSHAPEPROFILEDEF':{const d=v(3),fw=v(4),wt=v(5),ft=v(6);return fw*ft+(d-ft)*wt}
+    case 'IFCUSHAPEPROFILEDEF':{const d=v(3),fw=v(4),wt=v(5),ft=v(6);return 2*fw*ft+(d-2*ft)*wt}
+    case 'IFCCSHAPEPROFILEDEF':{const d=v(3),w=v(4),t=v(5),g=v(6)||0;return t*(d+2*w+2*g)}
+  }
+  return NaN;
+}
+function emptyBits(v){
+  if(v===null||v===undefined)return 1;
+  if(v&&v.t!==undefined){v=v.v;if(v===null||v===undefined)return 1}
+  if(typeof v==='number')return v===0?4:0;
+  if(typeof v==='string'){const s=v.trim();if(s==='')return 2;const u=s.toUpperCase();
+    if(u==='NOTDEFINED'||u==='NOT DEFINED'||u==='UNDEFINED')return 8;
+    if(MARKERS.has(u))return 16;
+    if(/^[-+]?0+([.,]0*)?$/.test(s))return 4;return 0}
+  if(v&&v.e){const u=v.e.toUpperCase();return(u==='NOTDEFINED'||u==='UNDEFINED')?8:0}
+  return 0;
+}
+function addEmpty(id,b,len){emptyIdV.push(id);emptyBitsV.push(b);for(let k=0;k<5;k++)if(b&(1<<k)){catN[k]++;catB[k]+=len}}
+
+/* ---------- PASADA 0: análisis ---------- */
+function p0(buf,s,e,seg){
+  const id=head(buf,s);let ti=typeByHash.get(HH);if(ti===undefined)ti=newType(buf);
+  const t=types[ti];const len=e-s;t.count++;t.bytes+=len;nEnt++;
+  if(id>=cap)ensureCap(id);
+  if(flags[id]&EX)dupIds++;
+  flags[id]=t.fb;if(id>maxSeen)maxSeen=id;if(id<seg.minId)seg.minId=id;if(id>seg.maxId)seg.maxId=id;
+  idDigits+=nd(id);
+  let inS=false;const dec=t.decor,wkAll=t.wk===1;let wk1=t.wk===2&&buf[A0]===35;
+  for(let i=A0;i<e;i++){const c=buf[i];if(c===39){inS=!inS;continue}if(inS||c!==35)continue;
+    let r=0,k=i+1,d;while((d=buf[k])>=48&&d<=57){r=r*10+d-48;k++}refDigits+=k-i-1;i=k-1;
+    if(r>=cap)ensureCap(r);
+    if(wkAll){nRefs++;continue}if(wk1){wk1=false;nRefs++;continue}
+    if(refc[r]<255)refc[r]++;nRefs++;if(r>id)fwdRefs++;if(dec)decorRefs.push(r)}
+  const h=t.h;
+  if(h)handleP0(h,buf,id,e,t,len);
+  if(t.spatial)spatial.set(id,ti);
+  if(t.cls)classIds.push(id);
+  if(t.sb)sbIds.push(id);
+  if(t.typeObj)typeObjIds.push(id);
+  if(t.product){const pd=topAttrRef(buf,A0,argsEnd(buf,e),6);if(pd){prodId.push(id);prodPds.push(pd);prodType.push(ti)}}
+  if(t.dg||t.dp){
+    const a1=argsEnd(buf,e);ensureOut((a1-A0)*2+256);
+    if(!tx(buf,A0,a1,ti,M_HASH,-1,OUT,0)){hashOut(OUT,0,txP,ti);const c=htLookup(id);
+      if(c&&c!==id){flags[id]|=RM;remap[id]=c;if(t.dg){dupGN++;dupGB+=len}else{dupPN++;dupPB+=len}}}
+  }
+  if((t.rl||t.ru)&&((sampleCtr++)&31)===0){
+    const a1=argsEnd(buf,e);ensureOut((a1-A0)*3+256);
+    tx(buf,A0,a1,ti,M_HASH,-1,OUT,0);const L0=txP;
+    for(let d=1;d<=9;d++){tx(buf,A0,a1,ti,M_HASH,t.rl?d:6,OUT,0);precSave[d]+=(L0-txP)*32}
+  }
+  if(t.psh){const a1=argsEnd(buf,e);ensureOut((a1-A0)*2+256);
+    if(!tx(buf,A0,a1,ti,M_HASH,-1,OUT,0)&&txTop>=4){hashOut(OUT,attrPos[2],txP,ti);psH1.push(H1);psH2.push(H2);psId.push(id)}}
+}
+function handleP0(h,buf,id,e,t,len){
+  switch(h){
+    case 1:ohIds.push(id);break;
+    case 2:projectId=id;break;
+    case 3:{const a=PA(buf,e);const p=refOf(a[4]);if(p&&Array.isArray(a[5]))for(const c of a[5]){const r=refOf(c);if(r){aggP.push(p);aggC.push(r)}}break}
+    case 4:{const a=PA(buf,e);const st=refOf(a[5]);if(st)contained.set(st,(contained.get(st)||0)+(Array.isArray(a[4])?a[4].length:0));break}
+    case 5:{const a=PA(buf,e);const ps=refOf(a[5]);if(ps&&Array.isArray(a[4])){rdbpRel.push(id);rdbpPset.push(ps);rdbpOff.push(objPool.n);objPool.push(a[4].length);for(const o of a[4])objPool.push(refOf(o))}break}
+    case 6:{const r=topAttrRef(buf,A0,argsEnd(buf,e),5);if(r)usedTypes.add(r);break}
+    case 7:{const a=PA(buf,e);propCount++;propBytes+=len;const b=emptyBits(a[2]);if(b)addEmpty(id,b,len);break}
+    case 8:{const a=PA(buf,e);propCount++;propBytes+=len;const v=a[2];let b=0;
+      if(v==null||(Array.isArray(v)&&v.length===0))b=1;else if(Array.isArray(v)&&v.length===1)b=emptyBits(v[0])&~1;
+      if(b)addEmpty(id,b,len);break}
+    case 9:{const a=PA(buf,e);propCount++;propBytes+=len;const v=valOf(a[3]);if(v===0)addEmpty(id,4,len);
+      if(t.name==='IFCQUANTITYVOLUME'&&typeof v==='number'){const nm=(typeof a[0]==='string'?a[0]:'').toLowerCase();qvolI.set(id,{v,k:nm.includes('net')?2:(nm.includes('gross')?1:0)})}break}
+    case 10:case 11:{const a=PA(buf,e);const nm=typeof a[2]==='string'&&a[2]?a[2]:'(sin nombre)';const lst=a[h===10?4:5];const np=Array.isArray(lst)?lst.length:0;
+      let ni=psetNameIdx.get(nm);if(ni===undefined){ni=psetNames.length;psetNameIdx.set(nm,ni);psetNames.push({name:nm,count:0,props:0,bytes:0,q:h===11})}
+      const ps=psetNames[ni];ps.count++;ps.props+=np;ps.bytes+=len;psetIdV.push(id);psetNmV.push(ni);psetBytes+=len;psetCnt++;
+      if(h===11&&Array.isArray(lst)){let best=-1,bv=0;for(const q of lst){const qv=qvolI.get(refOf(q));if(qv&&qv.k>best){best=qv.k;bv=qv.v}}if(best>=0)eqVol.set(id,bv)}
+      break}
+    case 12:{const a=PA(buf,e);siUnits.set(id,{type:enumOf(a[1]),prefix:enumOf(a[2]),name:enumOf(a[3])});break}
+    case 13:{const a=PA(buf,e);convUnits.set(id,{type:enumOf(a[1]),name:a[2],m:refOf(a[3])});break}
+    case 14:{const a=PA(buf,e);measures.set(id,valOf(a[0]));break}
+    case 15:{const a=PA(buf,e);if(Array.isArray(a[0]))for(const u of a[0])unitAssign.push(refOf(u));break}
+    case 16:{const a=PA(buf,e);const idf=typeof a[1]==='string'&&a[1]?a[1]:'(sin identificador)';
+      let ii=identIdx.get(idf);if(ii===undefined){ii=identStats.length;identIdx.set(idf,ii);identStats.push({ident:idf,count:0,bytes:0})}
+      identStats[ii].count++;identStats[ii].bytes+=len;repIdV.push(id);repIdentV.push(ii);
+      const its=Array.isArray(a[3])?a[3]:[];repOff.set(id,repPool.n);repPool.push(ii);repPool.push(its.length);for(const x of its)repPool.push(refOf(x));break}
+    case 17:{const a=PA(buf,e);const rs=Array.isArray(a[2])?a[2]:[];pdsOff.set(id,pdsPool.n);pdsPool.push(rs.length);for(const x of rs)pdsPool.push(refOf(x));break}
+    case 18:{const a1=argsEnd(buf,e);let cm=0;for(let i=A0;i<a1;i++)if(buf[i]===44)cm++;
+      if(cm===1){const a=PA(buf,e);const c=a[0];if(Array.isArray(c)&&c.length===2)pt2.set(id,[c[0],c[1]])}break}
+    case 19:{const a=PA(buf,e);const pts=a[0];if(Array.isArray(pts)&&pts.length>=3){const xy=[];for(const p of pts){const q=pt2.get(refOf(p));if(!q)return;xy.push(q)}polyArea.set(id,shoelace(xy))}break}
+    case 20:{const ar=pl2Area(buf,A0,argsEnd(buf,e));if(ar>=0)pl2A.set(id,ar);break}
+    case 21:{const v=pl3Box(buf,A0,argsEnd(buf,e));if(v>=0)pl3V.set(id,v);break}
+    case 22:{const r=topAttrRef(buf,A0,argsEnd(buf,e),0);const ar=pl2A.get(r);if(ar!==undefined)polyArea.set(id,ar);break}
+    case 23:{const a=PA(buf,e);const A=profileArea(t.name,a);if(A>0)profA.set(id,A);break}
+    case 24:{const a=PA(buf,e);const A=polyArea.get(refOf(a[2]));if(A!==undefined)profA.set(id,A);break}
+    case 25:{const a=PA(buf,e);let A=polyArea.get(refOf(a[2]));if(A!==undefined){if(Array.isArray(a[3]))for(const c of a[3]){const ai=polyArea.get(refOf(c));if(ai!==undefined)A-=ai}profA.set(id,Math.max(A,0))}break}
+    case 26:{const a=PA(buf,e);const A=profA.get(refOf(a[0]));const d=valOf(a[3]);if(A!==undefined&&typeof d==='number')itemV.set(id,A*Math.abs(d));break}
+    case 27:{const a=PA(buf,e);const A1=profA.get(refOf(a[0])),A2=profA.get(refOf(a[4]));const d=valOf(a[3]);if(A1!==undefined&&typeof d==='number')itemV.set(id,Math.max(A1,A2||0)*Math.abs(d));break}
+    case 28:{const r=topAttrRef(buf,A0,argsEnd(buf,e),0);const v=pl3V.get(r);if(v!==undefined)itemV.set(id,v);break}
+    case 29:{const a=PA(buf,e);const x=valOf(a[1]),y=valOf(a[2]),z=valOf(a[3]);if(typeof x==='number'&&typeof y==='number'&&typeof z==='number')itemV.set(id,Math.abs(x*y*z));break}
+    case 30:{const a=PA(buf,e);const op=enumOf(a[0]);boolI.set(id,[op==='DIFFERENCE'?1:op==='UNION'?2:3,refOf(a[1]),refOf(a[2])]);break}
+    case 31:{const a=PA(buf,e);mappedI.set(id,[refOf(a[0]),refOf(a[1])]);break}
+    case 32:{const a=PA(buf,e);repMapI.set(id,refOf(a[1]));break}
+    case 33:{const a=PA(buf,e);const s=valOf(a[3]);const sc=typeof s==='number'?s:1;volScale.set(id,Math.abs(sc*sc*sc));break}
+    case 34:{const a=PA(buf,e);const g=i=>{const x=valOf(a[i]);return typeof x==='number'?x:undefined};const s=g(3)??1;volScale.set(id,Math.abs(s*(g(5)??s)*(g(6)??s)));break}
+  }
+}
+
+async function analyze(f,hashMB){
+  file=f;fileSize=f.size;segs=[];types=[];typeByHash=new Map();resetAnalysis();
+  const t0=Date.now();
+  // cabecera
+  const hb=await read(0,Math.min(fileSize,4*1024*1024));
+  const htxt=latin(hb,0,hb.length);
+  const di=htxt.search(/\bDATA\s*;/);
+  if(di<0)throw new Error('No se encuentra la sección DATA; ¿es un IFC en formato STEP (no ifcZIP / ifcXML)?');
+  dataStart=di+htxt.slice(di).indexOf(';')+1;
+  const head0=htxt.slice(0,di);
+  const ms=head0.match(/FILE_SCHEMA\s*\(\s*\(\s*'([^']+)'/i);schema=ms?ms[1].toUpperCase():'?';
+  const fn=head0.match(/FILE_NAME\s*\(([\s\S]*?)\)\s*;/i);
+  if(fn){const strs=[...fn[1].matchAll(/'((?:[^']|'')*)'/g)].map(m=>m[1]);origin=strs.length>=2?strs[strs.length-2]:'';fileNameHdr=strs[0]||''}
+  // id máximo leyendo el final
+  const tb=await read(Math.max(0,fileSize-4*1024*1024),4*1024*1024);
+  let mx=0;const tt=latin(tb,0,tb.length);const re=/#(\d+)\s*=/g;let m;while((m=re.exec(tt)))if(+m[1]>mx)mx=+m[1];
+  cap=0;flags=new Uint8Array(0);refc=new Uint8Array(0);remap=new Uint32Array(0);
+  ensureCap(Math.max(mx,1024)+1);
+  htInit(hashMB);
+  const ram=cap*6+htId.length*12;
+  log(`Esquema ${schema} · id máximo estimado #${mx.toLocaleString('es-ES')} · memoria de trabajo ≈ ${(ram/1048576).toFixed(0)} MB`);
+  self.postMessage({type:'ram',bytes:ram});
+  // lectura en bloques
+  let pos=dataStart,size=CH,pending=read(pos,size);
+  while(pos<fileSize){
+    if(cancelled)throw new Error('Cancelado');
+    const buf=await pending;
+    const r=scan(buf);
+    if(r.n===0&&r.endsec<0){
+      if(pos+buf.length>=fileSize)throw new Error('Fin de archivo inesperado: no se encontró ENDSEC;');
+      size*=2;pending=read(pos,size);continue;
+    }
+    const n=r.n,consumed=r.endsec>=0&&r.n===0?0:r.consumed;
+    const next=pos+consumed;
+    if(r.endsec<0){size=CH;pending=read(next,size)}
+    const seg={off:pos,len:consumed,minId:0xffffffff,maxId:0};
+    for(let k=0;k<n;k++)p0(buf,starts[k],ends[k],seg);
+    if(consumed>0)segs.push(seg);
+    prog(0,'Analizando estructura del IFC',next-dataStart,fileSize-dataStart);
+    if(r.endsec>=0){dataEnd=pos+r.endsec;break}
+    pos=next;
+  }
+  if(!dataEnd)throw new Error('No se encontró ENDSEC; al final de la sección DATA');
+  prog(0,'Analizando estructura del IFC',1,1,true);
+  finalizeP0();
+  const st=buildStats(Date.now()-t0);
+  log(`Análisis completado en ${((Date.now()-t0)/1000).toFixed(1)} s · ${nEnt.toLocaleString('es-ES')} entidades`,'o');
+  if(dupIds)log(`Atención: ${dupIds} identificadores #id duplicados en el archivo original.`,'w');
+  if(htFull)log('La tabla de duplicados se llenó durante el análisis: la estimación de duplicados es un mínimo. Puedes aumentar la memoria en "Avanzado".','w');
+  self.postMessage({type:'analysis',stats:st});
+}
+
+function finalizeP0(){
+  // unidades
+  for(const u of unitAssign){
+    const si=siUnits.get(u);
+    if(si){const pf=si.prefix?(SI_PREFIX[si.prefix]||1):1;
+      if(si.type==='LENGTHUNIT'&&si.name==='METRE')lengthFactor=pf;
+      if(si.type==='VOLUMEUNIT'&&si.name==='CUBIC_METRE')volFactor=pf*pf*pf;continue}
+    const cu=convUnits.get(u);
+    if(cu){let v=measures.get(cu.m);if(typeof v!=='number'){const n=String(cu.name||'').toUpperCase();v=n.includes('INCH')?0.0254:n.includes('FOOT')?0.3048:1}
+      if(cu.type==='LENGTHUNIT')lengthFactor=v;if(cu.type==='VOLUMEUNIT')volFactor=v}
+  }
+  for(let i=0;i<decorRefs.n;i++){const r=decorRefs.a[i];if(r<cap&&(flags[r]&MAT))softRef.set(r,(softRef.get(r)||0)+1)}
+  // candidatos dependientes del recuento original de referencias
+  unusedPsets=new V32();for(let i=0;i<psetIdV.n;i++){const id=psetIdV.a[i];if(refc[id]===0)unusedPsets.push(id)}
+  unusedCls=new V32();for(let i=0;i<classIds.n;i++){const id=classIds.a[i];if(refc[id]===0)unusedCls.push(id)}
+  unusedTypes=new V32();for(let i=0;i<typeObjIds.n;i++){const id=typeObjIds.a[i];if(!usedTypes.has(id))unusedTypes.push(id)}
+  unusedMats=new V32();preOrph=new V32();
+  const ohSet=new Set(Array.from(ohIds.a.subarray(0,ohIds.n)));
+  for(let id=1;id<cap;id++){const f=flags[id];if(!(f&EX))continue;
+    if(f&MAT){if(refc[id]<=(softRef.get(id)||0))unusedMats.push(id);continue}
+    if(!(f&(RT|IN|PS))&&refc[id]===0&&id!==projectId&&!ohSet.has(id))preOrph.push(id)}
+  // estructura espacial
+  spatialAnalysis();
+  computeVolumes();
+  // índices ordenados de IfcRelDefinesByProperties
+  psOrd=new Uint32Array(rdbpRel.n);relOrd=new Uint32Array(rdbpRel.n);
+  for(let i=0;i<rdbpRel.n;i++){psOrd[i]=i;relOrd[i]=i}
+  psOrd.sort((a,b)=>rdbpPset.a[a]-rdbpPset.a[b]);relOrd.sort((a,b)=>rdbpRel.a[a]-rdbpRel.a[b]);
+  // liberar lo que ya no hace falta
+  pt2=null;polyArea=null;pl2A=null;pl3V=null;profA=null;
+}
+function bsearch(ord,arr,v){let lo=0,hi=ord.length-1;while(lo<=hi){const m=(lo+hi)>>1,x=arr[ord[m]];if(x===v)return ord[m];if(x<v)lo=m+1;else hi=m-1}return -1}
+function relByPset(ps){return bsearch(psOrd,rdbpPset.a,ps)}
+function relIndex(rel){return bsearch(relOrd,rdbpRel.a,rel)}
+
+function spatialAnalysis(){
+  const kids=new Map(),parentOf=new Map(),hasContent=new Set();
+  for(let k=0;k<aggP.n;k++){const p=aggP.a[k],c=aggC.a[k];
+    if(spatial.has(p)){if(spatial.has(c)){let a=kids.get(p);if(!a)kids.set(p,a=[]);a.push(c);parentOf.set(c,p)}else hasContent.add(p)}
+    else if(spatial.has(c))parentOf.set(c,p)}
+  const memo=new Map();
+  const isEmpty=(n,d)=>{if(memo.has(n))return memo.get(n);if(d>64)return false;
+    let r=!(contained.get(n)>0)&&!hasContent.has(n);
+    const ks=kids.get(n);if(ks)for(const k of ks){if(!isEmpty(k,d+1))r=false}
+    memo.set(n,r);return r};
+  emptySpaceIds=[];allSpaceIds=[];flattenIds=[];spaceParent=new Map();spatialSet=new Set(spatial.keys());
+  for(const[id,ti]of spatial){
+    const nm=types[ti].name,empty=isEmpty(id,0);
+    if(nm==='IFCSPACE'){allSpaceIds.push(id);if(empty)emptySpaceIds.push(id);
+      let p=parentOf.get(id),g=0;while(p&&spatial.has(p)&&types[spatial.get(p)].name==='IFCSPACE'&&g<32){p=parentOf.get(p);g++}
+      if(p&&spatial.has(p))spaceParent.set(id,p)}
+    const par=parentOf.get(id);
+    if(empty&&par&&par!==projectId)flattenIds.push(id);
+  }
+}
+function computeVolumes(){
+  const L3=lengthFactor**3;const qto=new Map();
+  for(let k=0;k<rdbpRel.n;k++){const v=eqVol.get(rdbpPset.a[k]);if(v===undefined)continue;
+    const off=rdbpOff.a[k],cnt=objPool.a[off];for(let j=0;j<cnt;j++)qto.set(objPool.a[off+1+j],v)}
+  const memo=new Map();
+  const itemVol=(id,d)=>{if(d>24)return NaN;if(memo.has(id))return memo.get(id);let v=NaN;
+    if(itemV.has(id))v=itemV.get(id);
+    else if(boolI.has(id)){const[op,a,b]=boolI.get(id);const va=itemVol(a,d+1);v=op===1?va:op===2?va+itemVol(b,d+1):Math.min(va,itemVol(b,d+1))}
+    else if(mappedI.has(id)){const[src,tg]=mappedI.get(id);const rep=repMapI.get(src);const sc=volScale.has(tg)?volScale.get(tg):1;v=repVol(rep,d+1)*sc}
+    memo.set(id,v);return v};
+  const repVol=(rep,d)=>{const off=repOff.get(rep);if(off===undefined)return NaN;const cnt=repPool.a[off+1];if(!cnt)return NaN;let s=0;
+    for(let j=0;j<cnt;j++){const v=itemVol(repPool.a[off+2+j],d);if(!(v>=0))return NaN;s+=v}return s};
+  prodVol=new Float64Array(prodId.n);
+  for(let i=0;i<prodId.n;i++){
+    const id=prodId.a[i];const q=qto.get(id);
+    if(q!==undefined){prodVol[i]=q*volFactor;continue}
+    const off=pdsOff.get(prodPds.a[i]);let vol=NaN;
+    if(off!==undefined){const cnt=pdsPool.a[off];let body=NaN,box=NaN,hasBody=false;
+      for(let j=0;j<cnt;j++){const rep=pdsPool.a[off+1+j];const ro=repOff.get(rep);if(ro===undefined)continue;
+        const idf=identStats[repPool.a[ro]].ident.toLowerCase();
+        if(idf==='body'||idf==='facetation'||idf==='mesh'){const v=repVol(rep,0);body=hasBody?body+v:v;hasBody=true}
+        else if(idf==='box')box=repVol(rep,0)}
+      vol=(body>=0)?body:(box>=0?box:NaN);if(vol>=0)vol*=L3}
+    prodVol[i]=vol;
+  }
+}
+
+/* ---------- estadísticas para la interfaz ---------- */
+function buildStats(ms){
+  const ty=types.map(t=>({name:t.name,count:t.count,bytes:t.bytes})).sort((a,b)=>b.bytes-a.bytes);
+  // estimación de fusión de Psets
+  let psMerge=0;{const n=psId.n,ord=new Uint32Array(n);for(let i=0;i<n;i++)ord[i]=i;
+    ord.sort((a,b)=>(psH1.a[a]-psH1.a[b])||(psH2.a[a]-psH2.a[b]));
+    let i=0;while(i<n){let j=i+1;while(j<n&&psH1.a[ord[j]]===psH1.a[ord[i]]&&psH2.a[ord[j]]===psH2.a[ord[i]])j++;
+      let el=0;for(let q=i;q<j;q++){const ps=psId.a[ord[q]];if(refc[ps]===1&&relByPset(ps)>=0)el++}
+      if(el>1)psMerge+=el-1;i=j}}
+  const relT=types.find(t=>t.name==='IFCRELDEFINESBYPROPERTIES');
+  const classes=new Map();
+  for(let i=0;i<prodId.n;i++){const nm=types[prodType.a[i]].name;if(NOT_ELEMENT.has(nm))continue;let c=classes.get(nm);if(!c)classes.set(nm,c={name:nm,total:0,known:0});c.total++;if(prodVol[i]>=0)c.known++}
+  let sbBytes=0;for(const t of types)if(t.sb)sbBytes+=t.bytes;
+  return{
+    ms,fileSize,dataBytes:dataEnd-dataStart,schema,origin,fileNameHdr,nEnt,maxSeen,fwdRefs,lengthFactor,volFactor,
+    types:ty,
+    est:{
+      spacesEmpty:emptySpaceIds.length,spacesAll:allSpaceIds.length,flatten:flattenIds.length,
+      oh:ohIds.n,catN,catB,psetsUnused:unusedPsets.n,mats:unusedMats.n,cls:unusedCls.n,orph:preOrph.n,typesUnused:unusedTypes.n,
+      sbN:sbIds.n,sbBytes,dupGN,dupGB,dupPN,dupPB,psMerge,psetAvg:psetCnt?psetBytes/psetCnt:0,relAvg:relT&&relT.count?relT.bytes/relT.count:0,
+      propAvg:propCount?propBytes/propCount:0,prec:Array.from(precSave),nRefs,refDigits,idDigits,htFull
+    },
+    psetNames:psetNames.slice().sort((a,b)=>b.props-a.props||b.count-a.count),
+    idents:identStats.slice().sort((a,b)=>b.bytes-a.bytes),
+    classes:[...classes.values()].sort((a,b)=>b.total-a.total),
+    products:prodId.n
+  };
+}
+function smallPreview(thr){
+  const res=new Map();let known=0,small=0,unk=0;
+  for(let i=0;i<prodId.n;i++){const nm=types[prodType.a[i]].name;if(NOT_ELEMENT.has(nm))continue;
+    let c=res.get(nm);if(!c)res.set(nm,c={name:nm,total:0,known:0,small:0});c.total++;
+    const v=prodVol[i];if(v>=0){c.known++;known++;if(v<thr){c.small++;small++}}else unk++}
+  self.postMessage({type:'small',thr,known,small,unk,classes:[...res.values()].sort((a,b)=>b.small-a.small||b.total-a.total)});
+}
+
+/* ---------- OPTIMIZACIÓN ---------- */
+function mark(id,why,countF){
+  if(id>=cap)return false;const f=flags[id];if(!(f&EX)||(f&(RM|KP)))return false;
+  flags[id]=f|RM;reasons[why]=(reasons[why]||0)+1;if(countF)markedF++;return true;
+}
+async function forEachSeg(reverse,fn,phase,label,skip){
+  const N=segs.length;let total=0;for(const s of segs)total+=s.len;let done=0;
+  const order=[];for(let i=0;i<N;i++)order.push(reverse?N-1-i:i);
+  let pre=null,preIdx=-1;
+  for(let q=0;q<N;q++){
+    if(cancelled)throw new Error('Cancelado');
+    const sg=segs[order[q]];
+    if(skip&&skip(sg)){done+=sg.len;prog(phase,label,done,total);continue}
+    const buf=(preIdx===q&&pre)?await pre:await read(sg.off,sg.len);
+    if(!skip&&q+1<N){const ns=segs[order[q+1]];pre=read(ns.off,ns.len);preIdx=q+1}
+    const r=scan(buf);
+    if(reverse){for(let k=r.n-1;k>=0;k--)fn(buf,starts[k],ends[k])}
+    else{for(let k=0;k<r.n;k++)fn(buf,starts[k],ends[k])}
+    done+=sg.len;prog(phase,label,done,total);
+  }
+  prog(phase,label,total,total,true);
+}
+function validate(buf,e,a1,id,ti,t){
+  ensureOut((a1-A0)*2+256);
+  const st=tx(buf,A0,a1,ti,M_CHECK,-1,OUT,0);
+  if(!st)return false;
+  const f=flags[id];
+  if(!(t.rel||!(f&RT)||(f&PS)))return false;      // objeto con GlobalId: se escribe $
+  mark(id,'CASC',true);
+  if(t.dep){const a=PA(buf,e);
+    const dead=r=>{const x=resolve(r);return x<cap&&(flags[x]&RM)!==0};
+    if(t.dep===1){const h=refOf(a[4]);if(h&&dead(h))mark(refOf(a[5]),'CASC',true)}
+    else if(t.dep===2){const h=refOf(a[4]);if(h&&dead(h)&&!spatialSet.has(h)&&Array.isArray(a[5]))for(const c of a[5])mark(refOf(c),'CASC',true)}
+    else if(t.dep===3){if(OPT.types&&(st&ST_EMP))mark(refOf(a[5]),'TYPE',true)}
+  }
+  return true;
+}
+function p1(buf,s,e){
+  const id=head(buf,s);const ti=typeByHash.get(HH);const t=types[ti];const f=flags[id];
+  if(rwN&&t.geo===2){const off=rwFind(id);if(off>=0){const m=rwPool.a[off];for(let j=0;j<m;j++){const x=resolve(rwPool.a[off+1+j]);if(x<cap&&refc[x]<255)refc[x]++}return}}
+  let anyDead=false,inS=false;const wkAll=t.wk===1;let wk1=t.wk===2&&buf[A0]===35;
+  for(let i=A0;i<e;i++){const c=buf[i];if(c===39){inS=!inS;continue}if(inS||c!==35)continue;
+    let r=0,k=i+1,d;while((d=buf[k])>=48&&d<=57){r=r*10+d-48;k++}i=k-1;
+    const x=resolve(r);if(x<cap){if(flags[x]&RM)anyDead=true;if(wkAll)continue;if(wk1){wk1=false;continue}if(refc[x]<255)refc[x]++}}
+  if(f&RM)return;
+  const a1=argsEnd(buf,e);
+  if(anyDead&&validate(buf,e,a1,id,ti,t))return;
+  const dg=t.dg&&OPT.dupGeo,dp=t.dp&&OPT.dupProps;
+  if(dg||dp){
+    ensureOut((a1-A0)*3+256);
+    const round=decLen>=0?(t.rl?decLen:(t.ru?decUnit:-1)):-1;
+    if(!tx(buf,A0,a1,ti,M_HASH,round,OUT,0)){hashOut(OUT,0,txP,ti);const c=htLookup(id);
+      if(c&&c!==id){flags[id]|=RM;remap[id]=c;reasons[dg?'DUPG':'DUPP']=(reasons[dg?'DUPG':'DUPP']||0)+1}}
+    return;
+  }
+  if(OPT.dupProps&&t.psh){ensureOut((a1-A0)*2+256);
+    if(!tx(buf,A0,a1,ti,M_HASH,-1,OUT,0)&&txTop>=4){hashOut(OUT,attrPos[2],txP,ti);psH1.push(H1);psH2.push(H2);psId.push(id)}}
+}
+function rEnt(buf,s,e){
+  const id=head(buf,s);const f=flags[id];if((f&(RM|PR))!==RM)return;
+  const t=types[typeByHash.get(HH)];const wkAll=t.wk===1;let wk1=t.wk===2&&buf[A0]===35;
+  if(rwN&&t.geo===2){const off=rwFind(id);if(off>=0){const m=rwPool.a[off];for(let j=0;j<m;j++){const x=resolve(rwPool.a[off+1+j]);if(x===id||x>=cap)continue;const cnt=refc[x];if(cnt>0&&cnt<255){refc[x]=cnt-1;checkOrphan(x,id)}}flags[id]=f|PR;return}}
+  let inS=false;
+  for(let i=A0;i<e;i++){const c=buf[i];if(c===39){inS=!inS;continue}if(inS||c!==35)continue;
+    let r=0,k=i+1,d;while((d=buf[k])>=48&&d<=57){r=r*10+d-48;k++}i=k-1;
+    if(wkAll)continue;if(wk1){wk1=false;continue}
+    const x=resolve(r);if(x===id||x>=cap)continue;
+    const cnt=refc[x];if(cnt>0&&cnt<255){refc[x]=cnt-1;checkOrphan(x,id)}}
+  flags[id]=f|PR;
+}
+function checkOrphan(x,cur){
+  const f=flags[x];if(f&(RM|KP))return;const c=refc[x];let ok;
+  if(f&PS)ok=c===0;
+  else if(f&(RT|IN))ok=false;
+  else if(f&MAT)ok=c===0||(OPT.mats&&c<=(softRef.get(x)||0));
+  else ok=c===0;
+  if(ok){flags[x]=f|RM;reasons.CASC=(reasons.CASC||0)+1;if(x>cur)needAnother=true}
+}
+function segPending(sg){for(let i=sg.minId;i<=sg.maxId&&i<cap;i++)if((flags[i]&(RM|PR))===RM)return true;return false}
+function fEnt(buf,s,e){
+  const id=head(buf,s);if(flags[id]&RM)return;
+  if(rwN&&rwFind(id)>=0)return;
+  let inS=false,dead=false;
+  for(let i=A0;i<e;i++){const c=buf[i];if(c===39){inS=!inS;continue}if(inS||c!==35)continue;
+    let r=0,k=i+1,d;while((d=buf[k])>=48&&d<=57){r=r*10+d-48;k++}i=k-1;
+    const x=resolve(r);if(x<cap&&(flags[x]&RM)){dead=true;break}}
+  if(dead){const ti=typeByHash.get(HH);validate(buf,e,argsEnd(buf,e),id,ti,types[ti])}
+}
+function consolidatePsets(){
+  const n=psId.n;if(n<2)return;
+  const ord=new Uint32Array(n);for(let i=0;i<n;i++)ord[i]=i;
+  ord.sort((a,b)=>(psH1.a[a]-psH1.a[b])||(psH2.a[a]-psH2.a[b])||(psId.a[a]-psId.a[b]));
+  let i=0;
+  while(i<n){let j=i+1;while(j<n&&psH1.a[ord[j]]===psH1.a[ord[i]]&&psH2.a[ord[j]]===psH2.a[ord[i]])j++;
+    if(j-i>1){let prim=0,primRel=0;
+      for(let q=i;q<j;q++){const ps=psId.a[ord[q]];if(flags[ps]&RM)continue;if(refc[ps]!==1)continue;
+        const ri=relByPset(ps);if(ri<0)continue;const rel=rdbpRel.a[ri];if(flags[rel]&RM)continue;
+        if(!prim){prim=ps;primRel=rel;continue}
+        flags[ps]|=RM;remap[ps]=prim;flags[rel]|=RM;reasons.DUPP=(reasons.DUPP||0)+1;
+        let arr=absorbed.get(primRel);if(!arr)absorbed.set(primRel,arr=[]);arr.push(rel)}}
+    i=j}
+}
+
+
+/* ================= FUSIÓN DE CARAS COPLANARIAS =================
+   Une triángulos/polígonos adyacentes del mismo plano de un mismo
+   IfcConnectedFaceSet / IfcClosedShell / IfcOpenShell en un único
+   IfcPolyLoop. Se mantiene en IFC2x3: solo cambia el número de caras.
+   Trabaja con una ventana de entidades recientes (los exportadores
+   escriben puntos, bucles, límites y caras justo antes de su conjunto). */
+let rwSortIds=null,rwSortOff=null,rwPool=null,rwN=0;
+let gPts,gPx,gPn,gLoops,gLP,gBounds,gFaces,gStat;
+const GK=67108864;
+function gReset(){gPts=new Map();gPx=new Float64Array(3*(1<<20));gPn=0;gLoops=new Map();gLP=new V32(1<<20);gBounds=new Map();gFaces=new Map()}
+function gRefs(buf,a,b){const r=[];let inS=false;for(let i=a;i<b;i++){const c=buf[i];if(c===39){inS=!inS;continue}if(inS||c!==35)continue;let n=0,k=i+1,d;while((d=buf[k])>=48&&d<=57){n=n*10+d-48;k++}r.push(n);i=k-1}return r}
+function gEnt(buf,s,e){
+  const id=head(buf,s);const ti=typeByHash.get(HH);if(ti===undefined)return;const g=types[ti].geo;if(!g)return;
+  if(flags[id]&RM)return;
+  switch(g){
+    case 1:{let i=A0,n=0;const a1=argsEnd(buf,e);const v=[0,0,0];
+      while(i<a1&&n<3){const c=buf[i];if((c>=48&&c<=57)||c===45||c===43){const k=numSpan(buf,i,a1);v[n++]=parseNum(buf,i,k);i=k}else i++}
+      if(gPn*3+3>gPx.length){const x=new Float64Array(gPx.length*2);x.set(gPx);gPx=x}
+      gPx[gPn*3]=v[0];gPx[gPn*3+1]=v[1];gPx[gPn*3+2]=v[2];gPts.set(id,gPn++);break}
+    case 2:{const r=gRefs(buf,A0,e);gLoops.set(id,gLP.n);gLP.push(r.length);for(const x of r)gLP.push(x);break}
+    case 3:{const r=gRefs(buf,A0,e);let ori=1;for(let i=e-2;i>A0;i--){if(buf[i]===46){ori=buf[i-1]===70?0:1;break}}
+      if(r.length)gBounds.set(id,r[0]*2+ori);break}
+    case 4:{const r=gRefs(buf,A0,e);gFaces.set(id,r.length===1?r[0]:-1);break}
+    case 5:{const r=gRefs(buf,A0,e);gProcess(r);
+      if(gFaces.size===0&&gBounds.size===0&&gLoops.size===0)gLP.reset();
+      if(gPts.size===0)gPn=0;
+      if(gPts.size>6e6||gLoops.size>6e6){gStat.evict++;gReset()}
+      break}
+  }
+}
+function gProcess(faceIds){
+  const n=faceIds.length;gStat.sets++;
+  const opt=OPT.coplanar,cosT=Math.cos(opt.ang*Math.PI/180),dT=opt.dist/lengthFactor,q=1e-6/lengthFactor,areaEps=(1e-6/lengthFactor)**2;
+  const vIdx=new Map(),vG=[],vx=[],vy=[],vz=[];
+  const loops=new Array(n),ok=new Uint8Array(n),loopId=new Int32Array(n),oriF=new Uint8Array(n);
+  const used=new Uint8Array(n),nx=new Float64Array(n),ny=new Float64Array(n),nz=new Float64Array(n),dd=new Float64Array(n);
+  const ptsSeen=[];
+  for(let f=0;f<n;f++){
+    const fid=faceIds[f];const b=gFaces.get(fid);
+    if(b===undefined){gStat.skipped++;return}           // falta algo: no se toca el conjunto
+    if(b<0||(flags[fid]&RM))continue;
+    const bd=gBounds.get(b);if(bd===undefined){gStat.skipped++;return}
+    const lid=Math.floor(bd/2),ori=bd%2;const off=gLoops.get(lid);if(off===undefined){gStat.skipped++;return}
+    const m=gLP.a[off];if(m<3)continue;
+    const L=new Array(m);
+    for(let j=0;j<m;j++){const pid=gLP.a[off+1+j];const pi=gPts.get(pid);if(pi===undefined){gStat.skipped++;return}
+      ptsSeen.push(pid);
+      const x=gPx[pi*3],y=gPx[pi*3+1],z=gPx[pi*3+2];
+      const key=Math.round(x/q)+','+Math.round(y/q)+','+Math.round(z/q);
+      let v=vIdx.get(key);if(v===undefined){v=vG.length;vIdx.set(key,v);vG.push(pid);vx.push(x);vy.push(y);vz.push(z)}
+      L[j]=v}
+    if(!ori)L.reverse();
+    // quitar vértices repetidos consecutivos
+    const C=[];for(let j=0;j<L.length;j++)if(L[j]!==L[(j+1)%L.length])C.push(L[j]);
+    loops[f]=C;loopId[f]=lid;oriF[f]=ori?0:1;
+    let a=0,bb=0,c=0;for(let j=0;j<C.length;j++){const p=C[j],r=C[(j+1)%C.length];a+=(vy[p]-vy[r])*(vz[p]+vz[r]);bb+=(vz[p]-vz[r])*(vx[p]+vx[r]);c+=(vx[p]-vx[r])*(vy[p]+vy[r])}
+    const len=Math.hypot(a,bb,c);
+    if(C.length<3||len/2<areaEps){if(OPT.coplanar.degen){mark(fid,'DEGEN');gStat.degen++}continue}
+    nx[f]=a/len;ny[f]=bb/len;nz[f]=c/len;dd[f]=nx[f]*vx[C[0]]+ny[f]*vy[C[0]]+nz[f]*vz[C[0]];ok[f]=1;
+  }
+  gStat.faces+=n;
+  // aristas dirigidas
+  const edge=new Map();
+  for(let f=0;f<n;f++){if(!ok[f])continue;const C=loops[f];for(let j=0;j<C.length;j++){const k=C[j]*GK+C[(j+1)%C.length];if(!edge.has(k))edge.set(k,f)}}
+  const MAXV=OPT.coplanar.maxv||256;
+  for(let s=0;s<n;s++){
+    if(!ok[s]||used[s])continue;used[s]=1;
+    const sx=nx[s],sy=ny[s],sz=nz[s],sd=dd[s];
+    const cop=g=>{if(sx*nx[g]+sy*ny[g]+sz*nz[g]<cosT)return false;const C=loops[g];for(const v of C)if(Math.abs(sx*vx[v]+sy*vy[v]+sz*vz[v]-sd)>dT)return false;return true};
+    const poly=loops[s].slice(),inP=new Set(poly);const mem=[s];
+    let i=0;
+    while(i<poly.length&&poly.length<MAXV){
+      const pl=poly.length,a=poly[i],b=poly[(i+1)%pl];
+      const g=edge.get(b*GK+a);
+      if(g!==undefined&&!used[g]&&ok[g]&&cop(g)){
+        const L=loops[g],m=L.length;const j=L.indexOf(b);
+        if(j>=0&&L[(j+1)%m]===a){
+          const ins=[];for(let t=2;t<m;t++)ins.push(L[(j+t)%m]);
+          if(ins.every(c=>!inP.has(c))){poly.splice(i+1,0,...ins);for(const c of ins)inP.add(c);used[g]=1;mem.push(g);continue}
+          if(m===3&&pl>3){const c=ins[0];
+            const prev=poly[(i-1+pl)%pl],nxt=poly[(i+2)%pl];
+            if(c===prev){poly.splice(i,1);inP.delete(a);used[g]=1;mem.push(g);i=Math.max(0,i-1);continue}
+            if(c===nxt){poly.splice((i+1)%pl,1);inP.delete(b);used[g]=1;mem.push(g);if((i+1)%pl===0)i=Math.max(0,i-1);continue}}
+        }
+      }
+      i++;
+    }
+    if(mem.length>1&&poly.length>=3){
+      const out=poly.map(v=>vG[v]);if(oriF[s])out.reverse();
+      rwIdsV.push(loopId[s]);rwOffV.push(rwPool.n);rwPool.push(out.length);for(const x of out)rwPool.push(x);
+      for(let t=1;t<mem.length;t++)mark(faceIds[mem[t]],'COPLANAR');
+      gStat.merged+=mem.length-1;gStat.polys++;
+    }
+  }
+  // liberar la ventana
+  for(const fid of faceIds){const b=gFaces.get(fid);gFaces.delete(fid);if(b>=0){const bd=gBounds.get(b);gBounds.delete(b);if(bd!==undefined)gLoops.delete(Math.floor(bd/2))}}
+  for(const p of ptsSeen)gPts.delete(p);
+}
+let rwIdsV,rwOffV;
+async function coplanarPass(){
+  gReset();gStat={sets:0,skipped:0,faces:0,merged:0,polys:0,degen:0,evict:0};
+  rwIdsV=new V32(1<<16);rwOffV=new V32(1<<16);rwPool=new V32(1<<18);
+  await forEachSeg(false,gEnt,1,'Fusión de caras coplanarias');
+  gReset();gPx=null;
+  const n=rwIdsV.n,ord=new Uint32Array(n);for(let i=0;i<n;i++)ord[i]=i;ord.sort((a,b)=>rwIdsV.a[a]-rwIdsV.a[b]);
+  rwSortIds=new Uint32Array(n);rwSortOff=new Uint32Array(n);for(let i=0;i<n;i++){rwSortIds[i]=rwIdsV.a[ord[i]];rwSortOff[i]=rwOffV.a[ord[i]]}
+  rwN=n;rwIdsV=rwOffV=null;
+  log(`Caras coplanarias: ${gStat.faces.toLocaleString('es-ES')} caras en ${gStat.sets.toLocaleString('es-ES')} conjuntos → ${gStat.merged.toLocaleString('es-ES')} caras absorbidas en ${gStat.polys.toLocaleString('es-ES')} polígonos`+(gStat.degen?` · ${gStat.degen.toLocaleString('es-ES')} caras degeneradas eliminadas`:''),'o');
+  if(gStat.skipped||gStat.evict)log(`Caras coplanarias: ${gStat.skipped} conjuntos no procesados por orden de escritura no local (${gStat.evict} vaciados de ventana).`,'w');
+}
+function rwFind(id){if(!rwN)return -1;let lo=0,hi=rwN-1;while(lo<=hi){const m=(lo+hi)>>1,x=rwSortIds[m];if(x===id)return rwSortOff[m];if(x<id)lo=m+1;else hi=m-1}return -1}
+
+/* escritura con control de flujo hacia el hilo principal */
+let WB=new Uint8Array(32*1024*1024),wp=0,inflight=0,ackQ=[],outBytes=0,drainRes=null;
+function onAck(){inflight--;const w=ackQ.shift();if(w)w();if(inflight===0&&drainRes){const r=drainRes;drainRes=null;r()}}
+async function flush(){
+  if(!wp)return;const chunk=WB.slice(0,wp);outBytes+=wp;wp=0;
+  inflight++;self.postMessage({type:'chunk',buf:chunk.buffer},[chunk.buffer]);
+  if(inflight>=3)await new Promise(r=>ackQ.push(r));
+}
+async function ensureW(n){if(wp+n>WB.length-16){await flush();if(n>WB.length-16)WB=new Uint8Array(Math.ceil(n*1.3))}}
+function drain(){return inflight===0?Promise.resolve():new Promise(r=>{drainRes=r})}
+
+let lateDrops=0,written=0;
+function spliceUnion(relId,p0){
+  const extra=[],seen=new Set();
+  for(const rr of absorbed.get(relId)){const k=relIndex(rr);if(k<0)continue;const off=rdbpOff.a[k],cnt=objPool.a[off];
+    for(let j=0;j<cnt;j++){const o=objPool.a[off+1+j];const x=o<cap?remap[o]:0;if(x&&!seen.has(x)){seen.add(x);extra.push(x)}}}
+  if(txTop<5)return p0;
+  const s4=attrPos[4],e4=attrPos[5]-1;
+  const own=WB.slice(s4,e4),tail=WB.slice(e4,p0);
+  if(!extra.length)return(own.length===1&&own[0]===36)?-1:p0;
+  let p=s4;
+  if(own.length===1&&own[0]===36){WB[p++]=40;}
+  else{for(let q=0;q<own.length-1;q++)WB[p++]=own[q];WB[p++]=44}
+  for(let q=0;q<extra.length;q++){if(q)WB[p++]=44;WB[p++]=35;p=wInt(WB,p,extra[q])}
+  WB[p++]=41;for(let q=0;q<tail.length;q++)WB[p++]=tail[q];return p;
+}
+function wEnt(buf,s,e){
+  const id=head(buf,s);if(flags[id]&RM)return 0;
+  const ti=typeByHash.get(HH);const t=types[ti];const a1=argsEnd(buf,e);
+  const need=(a1-A0)*3+(T1-T0)+256;
+  if(wp+need>WB.length-16)return need;  // pide vaciado
+  let p=wp;WB[p++]=35;p=wInt(WB,p,remap[id]);WB[p++]=61;for(let i=T0;i<T1;i++)WB[p++]=buf[i];WB[p++]=40;
+  if(rwN&&t.geo===2){const off=rwFind(id);if(off>=0){const m=rwPool.a[off];
+    if(wp+m*12+64>WB.length-16)return m*12+64+(T1-T0);
+    WB[p++]=40;let c=0;for(let j=0;j<m;j++){const x=remap[rwPool.a[off+1+j]];if(!x)continue;if(c++)WB[p++]=44;WB[p++]=35;p=wInt(WB,p,x)}
+    WB[p++]=41;WB[p++]=41;WB[p++]=59;WB[p++]=10;wp=p;written++;return -1}}
+  const round=decLen>=0?(t.rl?decLen:(t.ru?decUnit:-1)):-1;
+  const st=tx(buf,A0,a1,ti,M_WRITE,round,WB,p);p=txP;
+  const isPrim=t.h===5&&absorbed.has(id);
+  if(isPrim){p=spliceUnion(id,p);if(p<0){flags[id]|=RM;remap[id]=0;lateDrops++;return -1}}
+  else if(st&&(t.rel||!(flags[id]&RT)||(flags[id]&PS))){flags[id]|=RM;remap[id]=0;lateDrops++;return -1}
+  WB[p++]=41;WB[p++]=59;WB[p++]=10;wp=p;written++;return -1;
+}
+async function writePass(){
+  const total=fileSize;let done=0;
+  const hdr=await read(0,dataStart);await ensureW(hdr.length+256);WB.set(hdr,wp);wp+=hdr.length;WB[wp++]=10;
+  for(let si=0;si<segs.length;si++){
+    if(cancelled)throw new Error('Cancelado');
+    const sg=segs[si];const buf=await read(sg.off,sg.len);const r=scan(buf);
+    const n=r.n,S=starts.slice(0,n),E=ends.slice(0,n);
+    for(let k=0;k<n;k++){let need=wEnt(buf,S[k],E[k]);if(need>=0){await ensureW(need);need=wEnt(buf,S[k],E[k])}}
+    if(wp>WB.length*0.75)await flush();
+    done+=sg.len;prog(4,'Escribiendo IFC optimizado',done,total);
+  }
+  const tail=await read(dataEnd,fileSize-dataEnd);await ensureW(tail.length+16);WB.set(tail,wp);wp+=tail.length;
+  await flush();await drain();prog(4,'Escribiendo IFC optimizado',1,1,true);
+}
+
+function decimalsFor(tolM){const tu=tolM/lengthFactor;let d=Math.ceil(-Math.log10(tu)-1e-9);return Math.max(0,Math.min(9,d))}
+
+async function optimize(o){
+  OPT=o;const t0=Date.now();reasons=Object.create(null);absorbed=new Map();lateDrops=0;written=0;outBytes=0;markedF=0;
+  const keepMask=(~(RM|PR|KP))&255;for(let i=0;i<cap;i++)flags[i]&=keepMask;
+  refc.fill(0);remap.fill(0);spatialRedirect=new Map();
+  if(projectId)flags[projectId]|=KP;
+  STRNULL=!!(o.empty&&o.empty.on&&o.empty.strNull);
+  decLen=o.precision&&o.precision.on?decimalsFor(o.precision.tol):-1;decUnit=decLen>=0?6:-1;
+  if(decLen>=0)log(`Precisión: ${decLen} decimales en longitudes (unidad del modelo = ${lengthFactor} m), 6 en direcciones/normales`);
+  // ---- marcas iniciales
+  if(ohIds.n){const keep=ohIds.a[0];flags[keep]|=KP;if(o.meta)for(let k=1;k<ohIds.n;k++){const oh=ohIds.a[k];if(mark(oh,'META'))remap[oh]=keep}}
+  if(o.spaces==='empty')for(const id of emptySpaceIds)mark(id,'SPACE');
+  else if(o.spaces==='all')for(const id of allSpaceIds){if(mark(id,'SPACE')){const p=spaceParent.get(id);if(p)spatialRedirect.set(id,p)}}
+  if(o.flatten)for(const id of flattenIds)mark(id,'FLAT');
+  if(o.empty&&o.empty.on&&o.empty.mask)for(let k=0;k<emptyIdV.n;k++)if(emptyBitsV.a[k]&o.empty.mask)mark(emptyIdV.a[k],'EMPTY');
+  if(o.psets)for(let k=0;k<unusedPsets.n;k++)mark(unusedPsets.a[k],'PSET');
+  if(o.psetNames&&o.psetNames.length){const sel=new Set(o.psetNames.map(n=>psetNameIdx.get(n)));for(let k=0;k<psetIdV.n;k++)if(sel.has(psetNmV.a[k]))mark(psetIdV.a[k],'PSETNAME')}
+  if(o.mats)for(let k=0;k<unusedMats.n;k++)mark(unusedMats.a[k],'MAT');
+  if(o.cls)for(let k=0;k<unusedCls.n;k++)mark(unusedCls.a[k],'CLS');
+  if(o.orphans)for(let k=0;k<preOrph.n;k++)mark(preOrph.a[k],'ORPH');
+  if(o.types)for(let k=0;k<unusedTypes.n;k++)mark(unusedTypes.a[k],'TYPE');
+  if(o.sb)for(let k=0;k<sbIds.n;k++)mark(sbIds.a[k],'SB');
+  if(o.reps&&o.reps.length){const sel=new Set(o.reps.map(n=>identIdx.get(n)));for(let k=0;k<repIdV.n;k++)if(sel.has(repIdentV.a[k]))mark(repIdV.a[k],'REP')}
+  if(o.small&&o.small.on){const cl=new Set(o.small.classes||[]);for(let i=0;i<prodId.n;i++){if(!cl.has(types[prodType.a[i]].name))continue;const v=prodVol[i];if(v>=0&&v<o.small.thr)mark(prodId.a[i],'SMALL')}}
+  const pre=Object.values(reasons).reduce((a,b)=>a+b,0);
+  log(`Marcadas inicialmente ${pre.toLocaleString('es-ES')} entidades para eliminar`);
+  rwN=0;rwPool=null;
+  if(o.coplanar&&o.coplanar.on)await coplanarPass();
+  if(o.dupGeo||o.dupProps)htReset();
+  psH1.reset();psH2.reset();psId.reset();markedF=0;
+  // ---- pasada 1
+  await forEachSeg(false,p1,1,'Fusión de duplicados, recuento de referencias y validación');
+  if(htFull)log('La tabla de duplicados se llenó: algunos duplicados no se han fusionado. Aumenta la memoria en "Avanzado" si quieres exprimir más.','w');
+  if(o.dupProps)consolidatePsets();
+  for(let id=1;id<cap;id++){const f=flags[id];if((f&(EX|RM))===(EX|RM)&&remap[id]){const x=resolve(id);if(x!==id&&!(flags[x]&RM)){remap[id]=x;const sm=refc[x]+refc[id];refc[x]=sm>255?255:sm;refc[id]=0}}}
+  // ---- limpieza en cascada (inversa) + revalidación (directa) hasta estabilizar
+  let it=0;
+  for(;;){
+    let r=0;do{needAnother=false;r++;await forEachSeg(true,rEnt,2,`Limpieza en cascada (iteración ${it+1}.${r})`,sg=>!segPending(sg))}while(needAnother&&r<5);
+    if(markedF>0&&fwdRefs>0&&it<2){markedF=0;it++;await forEachSeg(false,fEnt,3,`Revalidación de referencias (iteración ${it})`);if(markedF===0)break}
+    else break;
+  }
+  // ---- tabla final de ids
+  for(let id=1;id<cap;id++){const f=flags[id];if((f&(EX|RM))===(EX|RM)){let x=remap[id],g=0;while(x&&(flags[x]&RM)&&g<64){x=remap[x];g++}remap[id]=(x&&!(flags[x]&RM))?x:0}}
+  let nn=0;const ren=!!o.renum;
+  for(let id=1;id<cap;id++){if((flags[id]&(EX|RM))===EX)remap[id]=ren?++nn:id}
+  for(let id=1;id<cap;id++){const f=flags[id];if((f&(EX|RM))===(EX|RM)&&remap[id]){const x=remap[id];remap[id]=(flags[x]&RM)?0:remap[x]}}
+  // ---- escritura
+  await writePass();
+  const ms=Date.now()-t0;
+  self.postMessage({type:'done',report:{ms,inBytes:fileSize,outBytes,written,inEnt:nEnt,reasons,lateDrops,htFull}});
+}
+
+self.onmessage=async ev=>{
+  const m=ev.data;
+  try{
+    if(m.cmd==='analyze'){cancelled=false;await analyze(m.file,m.hashMB||512)}
+    else if(m.cmd==='small'){smallPreview(m.thr)}
+    else if(m.cmd==='optimize'){cancelled=false;await optimize(m.opts)}
+    else if(m.cmd==='ack'){onAck()}
+    else if(m.cmd==='cancel'){cancelled=true}
+  }catch(err){self.postMessage({type:'error',msg:(err&&err.message)||String(err)})}
+};
+</script>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const fmtB=b=>{if(!(b>0))return '0 B';const u=['B','KB','MB','GB','TB'];let i=0;while(b>=1024&&i<4){b/=1024;i++}return b.toFixed(b<10&&i?2:b<100&&i?1:0)+' '+u[i]};
+const fmtN=n=>Math.round(n).toLocaleString('es-ES');
+const fmtT=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60);return m?`${m} min ${s%60}s`:`${s}s`};
+let worker=null,file=null,stats=null,busy=false,writable=null,blobParts=null,writeChain=Promise.resolve(),smallInfo=null;
+let pState={phase:-1,t0:0,startDone:0};
+
+/* ------------------ definición de opciones ------------------ */
+const CAT=[{k:0,l:'Nulo ($)'},{k:1,l:"Texto vacío ('')"},{k:2,l:'Cero (0 / 0.0)'},{k:3,l:'NOTDEFINED'},{k:4,l:'Marcadores (-, N/A)'}];
+const OPTS=[
+ {grp:'Optimizaciones solicitadas'},
+ {id:'spaces',t:'Eliminar espacios sin uso',d:'IfcSpace sin elementos contenidos ni subespacios. Sus límites (IfcRelSpaceBoundary) y su geometría se eliminan en cascada.',on:true},
+ {id:'meta',t:'Eliminar metadatos',d:'Conserva un único IfcOwnerHistory y redirige todas las referencias a él. Personas, organizaciones y aplicaciones sobrantes se limpian en cascada.',on:true},
+ {id:'empty',t:'Eliminar atributos vacíos o por defecto',d:'Elimina propiedades y cantidades cuyo valor es vacío o por defecto (y los Psets que queden vacíos).',on:true},
+ {id:'psets',t:'Eliminar conjuntos de propiedades sin uso',d:'IfcPropertySet / IfcElementQuantity que ningún objeto ni tipo utiliza, con sus propiedades.',on:true},
+ {id:'mats',t:'Eliminar materiales sin uso',d:'Materiales, capas y conjuntos no asignados a ningún elemento (incluida su representación de material).',on:true},
+ {id:'cls',t:'Eliminar clasificaciones sin uso',d:'IfcClassification / IfcClassificationReference sin ninguna relación que las use.',on:true},
+ {id:'small',t:'Eliminar elementos pequeños',d:'Elementos con volumen inferior al umbral. Volumen tomado de las cantidades (NetVolume/GrossVolume) o calculado de geometría simple (extrusiones, mallas, cajas).',on:false},
+ {id:'orphans',t:'Eliminar entidades huérfanas',d:'Entidades sin referencias inversas (salvo proyecto, historial de propiedad, relaciones y entidades raíz con GlobalId).',on:true},
+ {id:'dupGeo',t:'Eliminar geometría duplicada',d:'Fusiona puntos, direcciones, ejes, bucles, caras, perfiles, listas de puntos y estilos idénticos en una sola instancia compartida.',on:true},
+ {id:'flatten',t:'Aplanar la estructura espacial',d:'Elimina elementos espaciales (plantas, partes de instalación, zonas…) que no contienen elementos. Nunca toca el nivel directamente colgado del IfcProject.',on:true},
+ {grp:'Optimizaciones adicionales'},
+ {id:'coplanar',t:'Fusionar caras coplanarias (mallas facetadas)',d:'Une los triángulos adyacentes del mismo plano en un solo polígono (IfcFace → IfcFaceOuterBound → IfcPolyLoop). Es la palanca principal en IFC2x3 exportados desde Navisworks o con BREP facetado: el esquema no cambia, solo se reduce el número de caras.',on:true},
+ {id:'precision',t:'Reducir precisión de coordenadas',d:'Redondea coordenadas, dimensiones de perfiles y profundidades a una tolerancia. Los exportadores escriben 15+ decimales que no aportan nada; suele ser de los mayores ahorros y además permite fusionar más puntos.',on:true},
+ {id:'dupProps',t:'Fusionar propiedades y Psets duplicados',d:'Comparte propiedades con mismo nombre y valor, y une Psets idénticos en uno solo relacionado con todos sus objetos (un IfcRelDefinesByProperties).',on:true},
+ {id:'types',t:'Eliminar tipos sin instancias',d:'IfcTypeObject (IfcWallType, IfcBeamType…) que no definen ningún objeto, con sus Psets y RepresentationMaps.',on:true},
+ {id:'psetNames',t:'Eliminar Psets por nombre',d:'Quita del modelo Psets completos que no necesitas en la entrega (p.ej. Psets internos de Revit). Ordenados por número de propiedades.',on:false},
+ {id:'reps',t:'Eliminar representaciones secundarias',d:'Elimina representaciones que no son el sólido (Axis, FootPrint, Box, Annotation…). La representación Body nunca se toca.',on:false},
+ {id:'sb',t:'Eliminar límites de espacio',d:'Todas las IfcRelSpaceBoundary (1er y 2º nivel) con su geometría de conexión. Útil si el modelo no se usa para análisis energético.',on:false},
+ {id:'renum',t:'Renumerar identificadores STEP',d:'Reasigna los #id de forma consecutiva tras la limpieza: ids más cortos en cada referencia.',on:true},
+];
+
+function renderOpts(){
+  const box=$('#opts');box.innerHTML='';
+  for(const o of OPTS){
+    if(o.grp){const g=document.createElement('div');g.className='grp';g.textContent=o.grp;box.appendChild(g);continue}
+    const el=document.createElement('div');el.className='opt'+(o.on?' on':'');el.dataset.id=o.id;
+    el.innerHTML=`<div class="opt-h"><label class="sw" onclick="event.stopPropagation()"><input type="checkbox" ${o.on?'checked':''}><span></span></label>
+      <div class="tx"><div class="t">${o.t}</div><div class="d">${o.d}</div></div><div class="est zero" data-est>—</div></div><div class="opt-b">${optBody(o.id)}</div>`;
+    const cb=el.querySelector('.sw input');
+    cb.addEventListener('change',()=>{el.classList.toggle('on',cb.checked);updateEst()});
+    el.querySelector('.opt-h').addEventListener('click',e=>{if(e.target.closest('.sw'))return;cb.checked=!cb.checked;cb.dispatchEvent(new Event('change'))});
+    box.appendChild(el);
+  }
+  box.addEventListener('input',e=>{if(e.target.id==='smallThr')requestSmall();updateEst()});
+  box.addEventListener('change',()=>updateEst());
+}
+function optBody(id){
+  switch(id){
+    case 'spaces':return `<div class="row"><select class="inp" id="spMode"><option value="empty">Solo espacios vacíos (sin uso)</option><option value="all">Todos los IfcSpace</option></select></div>
+      <div class="note">Con «Todos», los elementos contenidos en un espacio se reasignan a su planta/contenedor padre.</div>`;
+    case 'empty':return `<div class="chips">${CAT.map(c=>`<label class="chip"><input type="checkbox" data-cat="${c.k}" checked>${c.l}<em data-catn="${c.k}"></em></label>`).join('')}</div>
+      <label class="chip" style="margin-top:8px"><input type="checkbox" id="strNull" checked>Sustituir textos vacíos '' por $ en atributos opcionales (Name, Description, Tag…)</label>
+      <div class="note w">Un valor 0 puede ser un dato real (p.ej. cota 0.00 o un Pset de diseño). Desmarca «Cero» si en tu entrega esos valores importan.</div>
+      <div class="note">Los atributos obligatorios del esquema (p.ej. PredefinedType de los tipos) no se anulan: dejaría un IFC inválido.</div>`;
+    case 'small':return `<div class="row">Volumen mínimo <input class="inp" id="smallThr" type="number" step="0.001" min="0" value="0.001" style="width:100px"> m³</div>
+      <div class="note" id="smallInfo">Analiza un archivo para ver los candidatos.</div>
+      <div class="row"><button class="lk" data-allcls="1">Marcar todas</button><button class="lk" data-allcls="0">Ninguna</button></div>
+      <div class="lst" id="smallCls"></div>
+      <div class="note">Los elementos cuyo volumen no se puede determinar (BREP sin cantidades, sólidos de barrido…) nunca se eliminan. Al eliminar un elemento se eliminan también sus huecos y partes.</div>`;
+    case 'coplanar':return `<div class="row">Tolerancia <select class="inp" id="copMode">
+        <option value="0.5|0.001">Estricta · 0,5° y 1 mm</option><option value="1|0.002" selected>Normal · 1° y 2 mm (recomendado)</option><option value="3|0.01">Agresiva · 3° y 10 mm (con pérdida en superficies curvas)</option></select></div>
+      <label class="chip" style="margin-top:8px"><input type="checkbox" id="copDegen" checked>Eliminar también caras degeneradas (área nula)</label>
+      <div class="note" id="copInfo"></div>
+      <div class="note">No se crean huecos ni se mueven vértices: cada polígono resultante es simple y conserva exactamente el contorno de los triángulos que lo forman. Con «Agresiva», superficies muy suavemente curvas (túneles, tubos de gran radio) se aplanan por tramos.</div>`;
+    case 'precision':return `<div class="row">Tolerancia <select class="inp" id="precTol">
+        <option value="0.001">1 mm</option><option value="0.0001">0,1 mm</option><option value="0.00001" selected>0,01 mm (recomendado)</option><option value="0.000001">0,001 mm</option></select></div>
+      <div class="note" id="precInfo"></div>`;
+    case 'psetNames':return `<div class="row"><input class="inp" id="psFilter" placeholder="Filtrar por nombre…" style="flex:1"><button class="lk" id="psNone">Ninguno</button></div><div class="lst" id="psList"><div class="empty">Analiza un archivo para ver los Psets.</div></div>`;
+    case 'reps':return `<div class="lst" id="repList"><div class="empty">Analiza un archivo para ver las representaciones.</div></div>`;
+    case 'orphans':return `<div class="note">Además, todo lo que quede huérfano a raíz de las demás eliminaciones se limpia siempre en cascada, esté o no activada esta opción.</div>`;
+    case 'dupGeo':return `<div class="note">No se fusionan sólidos completos ni representaciones (pueden tener estilos/colores distintos o pertenecer a un único producto según el esquema).</div>`;
+  }
+  return '';
+}
+function isOn(id){const el=document.querySelector(`.opt[data-id="${id}"] .sw input`);return el&&el.checked}
+function getOpts(){
+  let mask=0;document.querySelectorAll('[data-cat]').forEach(c=>{if(c.checked)mask|=1<<+c.dataset.cat});
+  return{
+    spaces:isOn('spaces')?$('#spMode').value:'none',meta:isOn('meta'),
+    empty:{on:isOn('empty'),mask,strNull:$('#strNull').checked},
+    psets:isOn('psets'),mats:isOn('mats'),cls:isOn('cls'),
+    small:{on:isOn('small'),thr:Math.max(0,parseFloat($('#smallThr').value)||0),classes:[...document.querySelectorAll('#smallCls input:checked')].map(i=>i.value)},
+    orphans:isOn('orphans'),dupGeo:isOn('dupGeo'),flatten:isOn('flatten'),
+    precision:{on:isOn('precision'),tol:parseFloat($('#precTol').value)},
+    dupProps:isOn('dupProps'),types:isOn('types'),
+    coplanar:{on:isOn('coplanar'),ang:+$('#copMode').value.split('|')[0],dist:+$('#copMode').value.split('|')[1],degen:$('#copDegen').checked,maxv:256},
+    psetNames:isOn('psetNames')?[...document.querySelectorAll('#psList input:checked')].map(i=>i.value):[],
+    reps:isOn('reps')?[...document.querySelectorAll('#repList input:checked')].map(i=>i.value):[],
+    sb:isOn('sb'),renum:isOn('renum')
+  };
+}
+
+/* ------------------ estimaciones ------------------ */
+function avgDigits(N){let s=0,lo=1,d=1;while(lo<=N){const hi=Math.min(N,lo*10-1);s+=(hi-lo+1)*d;lo*=10;d++}return N?s/N:1}
+function typeAvg(name){const t=stats.types.find(x=>x.name===name);return t&&t.count?t.bytes/t.count:0}
+function decFor(tol){const tu=tol/stats.lengthFactor;return Math.max(0,Math.min(9,Math.ceil(-Math.log10(tu)-1e-9)))}
+function computeEst(o){
+  const E=stats.est,r={};const avgEnt=stats.dataBytes/Math.max(1,stats.nEnt);
+  const spN=o.spaces==='all'?E.spacesAll:o.spaces==='empty'?E.spacesEmpty:0;
+  r.spaces=[spN*typeAvg('IFCSPACE')*3,spN,'espacios'];
+  r.meta=[Math.max(0,E.oh-1)*typeAvg('IFCOWNERHISTORY'),Math.max(0,E.oh-1),'historiales'];
+  let eb=0,en=0;for(let k=0;k<5;k++)if(o.empty.mask&(1<<k)){eb+=E.catB[k];en+=E.catN[k]}
+  r.empty=[eb,en,'propiedades'];
+  r.psets=[E.psetsUnused*(E.psetAvg+E.propAvg*4),E.psetsUnused,'Psets'];
+  r.mats=[E.mats*avgEnt*2,E.mats,'entidades'];
+  r.cls=[E.cls*avgEnt,E.cls,'entidades'];
+  r.small=[0,smallInfo?smallInfo.selSmall:0,'elementos'];
+  r.orphans=[E.orph*avgEnt,E.orph,'entidades'];
+  r.dupGeo=[E.dupGB,E.dupGN,'duplicados'];
+  r.flatten=[E.flatten*avgEnt*4,E.flatten,'contenedores'];
+  const d=decFor(o.precision.tol);r.precision=[Math.max(0,E.prec[Math.max(1,d)]||0),0,`${d} decimales`];
+  r.dupProps=[E.dupPB+E.psMerge*(E.psetAvg+E.relAvg*0.4),E.dupPN+E.psMerge,'duplicados'];
+  {const fb=['IFCPOLYLOOP','IFCFACEOUTERBOUND','IFCFACE'].reduce((a,n)=>{const t=stats.types.find(x=>x.name===n);return a+(t?t.bytes:0)},0);
+   const fc=(stats.types.find(x=>x.name==='IFCFACE')||{count:0}).count;
+   const k=o.coplanar.ang>=3?0.6:o.coplanar.ang>=1?0.5:0.4;
+   r.coplanar=[fb*k,fc,'caras'];
+   const ci=$('#copInfo');if(ci)ci.innerHTML=fc?`${fmtN(fc)} caras · ${fmtB(fb)} en la cadena IfcFace/IfcFaceOuterBound/IfcPolyLoop. La cifra de ahorro es una previsión: el valor real se conoce al optimizar y aparece en el registro.`:'El modelo no tiene geometría facetada.'}
+  r.types=[E.typesUnused*avgEnt*3,E.typesUnused,'tipos'];
+  let pb=0,pn=0;for(const n of o.psetNames){const p=stats.psetNames.find(x=>x.name===n);if(p){pb+=p.bytes+p.props*E.propAvg;pn+=p.count}}
+  r.psetNames=[pb,pn,'Psets'];
+  let rb=0,rn=0;for(const n of o.reps){const p=stats.idents.find(x=>x.ident===n);if(p){rb+=p.bytes*4;rn+=p.count}}
+  r.reps=[rb,rn,'representaciones'];
+  r.sb=[E.sbBytes*2,E.sbN,'relaciones'];
+  let rem=0;for(const k in r)if(k!=='renum'&&k!=='precision'&&k!=='coplanar'&&isOn(k))rem+=r[k][1];
+  if(isOn('coplanar'))rem+=r.coplanar[1]*(r.coplanar[0]>0?2.4*(o.coplanar.ang>=3?0.6:o.coplanar.ang>=1?0.5:0.4):0);
+  const N=Math.max(1,stats.nEnt-rem);const newD=avgDigits(N);
+  r.renum=[Math.max(0,(E.refDigits+E.idDigits)-(E.nRefs+stats.nEnt)*newD),0,`≈${newD.toFixed(1)} dígitos/ref`];
+  return r;
+}
+function updateEst(){
+  if(!stats)return;const o=getOpts();const r=computeEst(o);let tot=0;
+  for(const el of document.querySelectorAll('.opt')){
+    const id=el.dataset.id,e=r[id],box=el.querySelector('[data-est]');if(!e){box.textContent='';continue}
+    const on=isOn(id);if(on)tot+=e[0];
+    box.className='est'+(e[0]>0||e[1]>0?'':' zero');
+    box.innerHTML=(e[0]>0?'−'+fmtB(e[0]):(id==='small'&&e[1]?'':'—'))+(e[1]?`<small>${fmtN(e[1])} ${e[2]}</small>`:(e[2]&&id!=='small'&&e[0]>0?`<small>${e[2]}</small>`:''));
+  }
+  const pi=$('#precInfo');if(pi){const d=decFor(o.precision.tol);pi.textContent=`Unidad de longitud del modelo: ${unitName(stats.lengthFactor)} → ${d} decimales en coordenadas.`}
+  tot=Math.min(tot,stats.fileSize*0.95);
+  const fin=stats.fileSize-tot,pct=tot/stats.fileSize*100;
+  $('#estBody').className='';
+  $('#estBody').innerHTML=`<div class="estbox">
+     <div><div class="lb">Original</div><div class="big">${fmtB(stats.fileSize)}</div></div>
+     <div><div class="lb">Estimado</div><div class="big" style="color:var(--accent2)">≈ ${fmtB(fin)}</div></div>
+     <div><div class="lb">Reducción</div><div class="big">−${pct.toFixed(0)} %</div></div></div>
+     <div class="bar2"><i style="width:${(100-pct).toFixed(1)}%"></i></div>
+     <div class="note">Estimación orientativa a partir del análisis. El resultado real suele ser algo mejor: al eliminar elementos, Psets o espacios también desaparece todo lo que dependía de ellos (geometría, colocaciones, relaciones) y eso no se cuenta aquí.</div>`;
+  $('#kSize2').textContent=`→ ≈ ${fmtB(fin)}`;
+}
+function unitName(f){return f===1?'metro':f===0.001?'milímetro':f===0.01?'centímetro':f===0.3048?'pie':f===0.0254?'pulgada':f+' m'}
+
+/* ------------------ listas dependientes del análisis ------------------ */
+function fillLists(){
+  const ps=$('#psList');
+  ps.innerHTML=stats.psetNames.length?stats.psetNames.map(p=>`<label data-n="${esc(p.name.toLowerCase())}"><input type="checkbox" value="${esc(p.name)}"><span>${esc(p.name)}${p.q?' <em>(cantidades)</em>':''}</span><em>${fmtN(p.count)} · ${fmtN(p.props)} prop.</em></label>`).join(''):'<div class="empty">No hay Psets.</div>';
+  $('#psFilter').oninput=e=>{const q=e.target.value.toLowerCase();ps.querySelectorAll('label').forEach(l=>l.style.display=l.dataset.n.includes(q)?'':'none')};
+  $('#psNone').onclick=()=>{ps.querySelectorAll('input').forEach(i=>i.checked=false);updateEst()};
+  const rl=$('#repList');
+  const ids=stats.idents.filter(x=>!/^(body|facetation|mesh)$/i.test(x.ident));
+  rl.innerHTML=ids.length?ids.map(p=>`<label><input type="checkbox" value="${esc(p.ident)}"><span>${esc(p.ident)}</span><em>${fmtN(p.count)} · ${fmtB(p.bytes)}</em></label>`).join(''):'<div class="empty">Solo hay representaciones Body.</div>';
+  document.querySelectorAll('[data-catn]').forEach(e=>{e.textContent=fmtN(stats.est.catN[+e.dataset.catn])});
+  document.querySelectorAll('[data-allcls]').forEach(b=>b.onclick=()=>{document.querySelectorAll('#smallCls input').forEach(i=>i.checked=b.dataset.allcls==='1');renderSmallCount();updateEst()});
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+let smallTimer=0;
+function requestSmall(){clearTimeout(smallTimer);smallTimer=setTimeout(()=>{if(worker&&stats&&!busy)worker.postMessage({cmd:'small',thr:Math.max(0,parseFloat($('#smallThr').value)||0)})},250)}
+function renderSmall(m){
+  const prev=new Map([...document.querySelectorAll('#smallCls input')].map(i=>[i.value,i.checked]));
+  $('#smallCls').innerHTML=m.classes.map(c=>`<label><input type="checkbox" value="${c.name}" ${prev.has(c.name)?(prev.get(c.name)?'checked':''):'checked'}><span>${c.name}</span><em>${fmtN(c.small)} / ${fmtN(c.total)}${c.known<c.total?` · ${fmtN(c.total-c.known)} s/vol`:''}</em></label>`).join('')||'<div class="empty">Sin elementos.</div>';
+  smallInfo=m;$('#smallCls').onchange=()=>{renderSmallCount();updateEst()};renderSmallCount();
+}
+function renderSmallCount(){
+  if(!smallInfo)return;const sel=new Set([...document.querySelectorAll('#smallCls input:checked')].map(i=>i.value));
+  let s=0;for(const c of smallInfo.classes)if(sel.has(c.name))s+=c.small;smallInfo.selSmall=s;
+  $('#smallInfo').innerHTML=`<b>${fmtN(s)}</b> elementos por debajo de ${smallInfo.thr} m³ en las clases marcadas · volumen conocido en ${fmtN(smallInfo.known)} de ${fmtN(smallInfo.known+smallInfo.unk)} elementos.`;
+}
+
+/* ------------------ tablas ------------------ */
+function renderTypes(){
+  const top=stats.types.slice(0,40),max=top[0]?top[0].bytes:1,tot=stats.dataBytes;
+  $('#typesBody').className='twrap';
+  $('#typesBody').innerHTML=`<table><thead><tr><th>Clase</th><th style="text-align:right">Instancias</th><th style="text-align:right">Tamaño</th><th style="text-align:right">%</th><th></th></tr></thead><tbody>${
+    top.map(t=>`<tr><td class="cls">${t.name||'(instancia compleja)'}</td><td class="n">${fmtN(t.count)}</td><td class="n">${fmtB(t.bytes)}</td><td class="n">${(t.bytes/tot*100).toFixed(1)}</td><td><div class="tbar"><i style="width:${(t.bytes/max*100).toFixed(1)}%"></i></div></td></tr>`).join('')
+  }</tbody></table><div class="note">${stats.types.length} clases distintas · se muestran las 40 que más pesan.</div>`;
+}
+function renderKpis(){
+  $('#kSize').textContent=fmtB(stats.fileSize);
+  $('#kEnt').textContent=fmtN(stats.nEnt);$('#kEnt2').textContent=`#id máx. ${fmtN(stats.maxSeen)}`;
+  $('#kSch').textContent=stats.schema;$('#kSch2').textContent=stats.origin?stats.origin.slice(0,40):' ';
+}
+const REASONS={META:'Historiales de propiedad sobrantes',SPACE:'Espacios',EMPTY:'Propiedades/cantidades vacías o por defecto',PSET:'Psets sin uso',PSETNAME:'Psets eliminados por nombre',MAT:'Materiales sin uso',CLS:'Clasificaciones sin uso',SMALL:'Elementos pequeños',ORPH:'Entidades huérfanas previas',DUPG:'Geometría y estilos duplicados (fusionados)',DUPP:'Propiedades y Psets duplicados (fusionados)',FLAT:'Contenedores espaciales vacíos',REP:'Representaciones secundarias',SB:'Límites de espacio',TYPE:'Tipos sin instancias',CASC:'Dependientes eliminados en cascada',COPLANAR:'Caras coplanarias fusionadas en polígonos',DEGEN:'Caras degeneradas (área nula)'};
+function renderReport(r){
+  const red=1-r.outBytes/r.inBytes;
+  const rows=Object.entries(r.reasons).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${REASONS[k]||k}</td><td class="n">${fmtN(v)}</td></tr>`).join('');
+  $('#cardRep').style.display='';
+  $('#repBody').innerHTML=`<div class="rep">
+     <div class="kpi"><div class="l">Tamaño final</div><div class="v good">${fmtB(r.outBytes)}</div><div class="s">desde ${fmtB(r.inBytes)}</div></div>
+     <div class="kpi"><div class="l">Reducción</div><div class="v good">−${(red*100).toFixed(1)} %</div><div class="s">${fmtB(r.inBytes-r.outBytes)} menos</div></div>
+     <div class="kpi"><div class="l">Entidades</div><div class="v">${fmtN(r.written)}</div><div class="s">desde ${fmtN(r.inEnt)} · ${fmtT(r.ms/1000)}</div></div></div>
+     <table><thead><tr><th>Motivo</th><th style="text-align:right">Entidades</th></tr></thead><tbody>${rows||'<tr><td colspan=2>Nada eliminado</td></tr>'}</tbody></table>
+     ${r.lateDrops?`<div class="note">${fmtN(r.lateDrops)} entidades sin referencias válidas se descartaron durante la escritura.</div>`:''}
+     <div class="hint"><b>Siguiente paso recomendado:</b> abre el resultado en tu visor federado o pásalo por el validador antes de entregarlo, sobre todo si has usado «Elementos pequeños» o «Todos los IfcSpace».</div>`;
+  $('#cardRep').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ------------------ progreso / log ------------------ */
+const PH=['Análisis','Fusión y validación','Cascada','Revalidación','Escritura'];
+function setSteps(active,mode){
+  const list=mode==='an'?[0]:[1,2,3,4];
+  $('#steps').innerHTML=list.map(i=>`<span class="step ${i<active?'done':i===active?'act':''}">${PH[i]}</span>`).join('');
+}
+function onProgress(m){
+  const now=performance.now();
+  if(m.phase!==pState.phase||m.label!==pState.label){pState={phase:m.phase,label:m.label,t0:now,startDone:m.done};setSteps(m.phase,m.phase===0?'an':'op')}
+  const f=m.total?m.done/m.total:0;
+  $('#pLabel').textContent=m.label;$('#pBar').style.width=(f*100).toFixed(1)+'%';
+  const el=(now-pState.t0)/1000,sp=el>0.3?(m.done-pState.startDone)/el:0;
+  $('#pDone').textContent=`${fmtB(m.done)} / ${fmtB(m.total)}`;
+  $('#pSpeed').textContent=sp?fmtB(sp)+'/s':'—';
+  $('#pEta').textContent=sp&&f<1?'quedan '+fmtT((m.total-m.done)/sp):(f>=1?'hecho':'—');
+}
+function log(msg,cls){const d=document.createElement('div');if(cls)d.className=cls;const t=new Date().toLocaleTimeString('es-ES');d.textContent=`[${t}] ${msg}`;$('#log').appendChild(d);$('#log').scrollTop=1e9}
+function setBusy(b){busy=b;$('#btnRun').disabled=b||!stats;$('#btnCancel').disabled=!b;$('#drop').style.pointerEvents=b?'none':'';$('#drop').style.opacity=b?.5:1}
+
+/* ------------------ worker ------------------ */
+function newWorker(){
+  if(worker)worker.terminate();
+  const src=document.getElementById('worker-src').textContent;
+  worker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+  worker.onmessage=onMsg;
+  worker.onerror=e=>{log('Error del proceso: '+(e.message||e),'e');setBusy(false)};
+}
+function onMsg(ev){
+  const m=ev.data;
+  switch(m.type){
+    case 'progress':onProgress(m);break;
+    case 'log':log(m.msg,m.level==='w'?'w':m.level==='o'?'o':'');break;
+    case 'ram':$('#kRam').textContent=fmtB(m.bytes);$('#kRam2').textContent=navigator.deviceMemory?`equipo: ≥ ${navigator.deviceMemory} GB RAM`:'arrays tipados por #id';break;
+    case 'analysis':stats=m.stats;renderKpis();renderTypes();fillLists();setBusy(false);requestSmall();updateEst();
+      $('#prog').classList.remove('show');break;
+    case 'small':renderSmall(m);updateEst();break;
+    case 'chunk':{const u=new Uint8Array(m.buf);
+      writeChain=writeChain.then(async()=>{if(writeFailed)return;
+        try{if(writable)await writable.write(u);else blobParts.push(new Blob([u]));worker.postMessage({cmd:'ack'})}
+        catch(e){writeFailed=true;failRun(`Error al escribir el archivo de destino (${e.name}: ${e.message}). Comprueba el espacio libre en disco o prueba «Descarga del navegador» en «Avanzado · método de guardado».`)}});break}
+    case 'done':writeChain.then(async()=>{
+        if(writeFailed)return;
+        if(writable){setRunStatus('Cerrando el archivo (el navegador puede analizarlo antes de liberarlo)…');
+          try{await writable.close();writable=null;log('Archivo guardado en disco.','o')}
+          catch(e){writable=null;failRun(`El navegador no ha permitido completar el archivo (${e.name}: ${e.message}). Suele deberse a SmartScreen o a una política de Edge. Prueba «Descarga del navegador» en «Avanzado · método de guardado».`);return}}
+        else{const b=new Blob(blobParts,{type:'application/octet-stream'});blobParts=null;const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=outName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),60000);log('Descarga generada.','o')}
+        log(`Optimización terminada en ${fmtT(m.report.ms/1000)}: ${fmtB(m.report.inBytes)} → ${fmtB(m.report.outBytes)}`,'o');
+        renderReport(m.report);setBusy(false);setRunStatus('');
+      });break;
+    case 'error':log(m.msg,'e');setRunStatus('Error: '+m.msg,'e');setBusy(false);if(writable){try{writable.abort?.()}catch(_){}writable=null}break;
+  }
+}
+function outName(){return file.name.replace(/\.ifc$/i,'')+'_optimizado.ifc'}
+function startAnalysis(f){
+  file=f;stats=null;smallInfo=null;$('#cardRep').style.display='none';
+  $('#finfo').classList.add('show');
+  $('#finfo').innerHTML=`<div>Archivo</div><div>${esc(f.name)}</div><div>Tamaño</div><div>${fmtB(f.size)}</div><div>Modificado</div><div>${new Date(f.lastModified).toLocaleString('es-ES')}</div>`;
+  ['#kSize','#kEnt','#kSch','#kRam'].forEach(k=>$(k).textContent='—');$('#kSize').textContent=fmtB(f.size);
+  log(`Analizando ${f.name} (${fmtB(f.size)})…`);
+  newWorker();setBusy(true);$('#prog').classList.add('show');pState={phase:-1};
+  worker.postMessage({cmd:'analyze',file:f,hashMB:+$('#hashMB').value});
+}
+function reanalyze(){if(file){newWorker();setBusy(true);$('#prog').classList.add('show');pState={phase:-1};worker.postMessage({cmd:'analyze',file,hashMB:+$('#hashMB').value})}}
+
+let writeFailed=false;
+function setRunStatus(msg,cls,btn){const el=$('#runStatus');el.textContent=msg||'';el.className='note'+(cls==='e'?' w':'');el.style.color=cls==='e'?'var(--danger)':'';
+  if(btn){const b=document.createElement('button');b.className='btn';b.style.cssText='display:block;margin-top:8px;color:var(--text)';b.textContent=btn.label;b.onclick=btn.fn;el.appendChild(b)}}
+function useDownloadAndRun(){$('#saveMode').value='download';try{localStorage.setItem('optifc.saveMode','download')}catch(_){}
+  log('Método de guardado cambiado a «Descarga del navegador» (se recordará en este navegador).','w');run()}
+function failRun(msg){log(msg,'e');setRunStatus(msg,'e');if(worker){worker.terminate();worker=null}setBusy(false);$('#prog').classList.remove('show');
+  if(writable){try{writable.abort?.()}catch(_){}writable=null}blobParts=null;
+  if(file){log('Vuelvo a analizar el archivo para poder reintentar…');reanalyze()}}
+function withTimeout(p,ms,what){let t;return Promise.race([p,new Promise((_,rej)=>{t=setTimeout(()=>{const e=new Error(`${what}: el navegador no ha respondido en ${ms/1000} s`);e.name='TimeoutError';rej(e)},ms)})]).finally(()=>clearTimeout(t))}
+async function openDestination(mode){
+  // devuelve 'disk' | 'download' | null (cancelado / bloqueado sin alternativa)
+  if(mode==='download'||!window.showSaveFilePicker){
+    if(!window.showSaveFilePicker&&mode!=='download')log('Este navegador no permite escribir directamente en disco: se usará la descarga del navegador.','w');
+    blobParts=[];return 'download';
+  }
+  let h;
+  setRunStatus('Elige dónde guardar el IFC optimizado…');
+  try{h=await showSaveFilePicker({suggestedName:outName(),types:[{description:'Modelo IFC',accept:{'application/octet-stream':['.ifc']}}]})}
+  catch(e){
+    if(e.name==='AbortError'){
+      log(`El diálogo «Guardar como…» no ha devuelto destino (${e.message||'cancelado'}). Si elegiste una ubicación, es el navegador quien bloquea la escritura directa a disco.`,'w');
+      setRunStatus('Si elegiste una ubicación y no ha arrancado, este navegador bloquea «Guardar como…». Puedes continuar guardando el resultado como descarga:','e',{label:'Continuar con descarga del navegador',fn:useDownloadAndRun});
+      return null}
+    log(`El diálogo «Guardar como…» ha fallado (${e.name}: ${e.message}).`,'e');
+    if(mode==='auto'){log('Se usará la descarga del navegador.','w');blobParts=[];return 'download'}
+    setRunStatus('No se pudo abrir el diálogo de guardado. Detalles en el registro.','e');return null;
+  }
+  setRunStatus('Preparando el archivo de destino…');
+  try{writable=await withTimeout(h.createWritable(),20000,'Abrir el archivo de destino');log(`Destino: ${h.name}`);return 'disk'}
+  catch(e){
+    writable=null;
+    log(`El navegador no permite escribir en «${h.name}» (${e.name}: ${e.message}). En Edge suele deberse a una política corporativa de acceso a archivos o a SmartScreen.`,'e');
+    if(mode==='auto'){log('Se usará la descarga del navegador: el archivo aparecerá en tu carpeta de descargas al terminar.','w');blobParts=[];return 'download'}
+    setRunStatus('El navegador ha bloqueado la escritura en esa ubicación. Detalles en el registro.','e');return null;
+  }
+}
+async function run(){
+  if(!stats||busy)return;
+  const o=getOpts();
+  if(o.small.on&&!o.small.classes.length){log('«Elementos pequeños» activo sin clases marcadas: no se eliminará ningún elemento.','w')}
+  writable=null;blobParts=null;writeFailed=false;
+  $('#btnRun').disabled=true;
+  let dest;
+  try{dest=await openDestination($('#saveMode').value)}
+  catch(e){log(`Error inesperado al preparar el guardado (${e.name}: ${e.message}).`,'e');dest=null}
+  if(!dest){$('#btnRun').disabled=!stats||busy;return}
+  if(!worker){log('El proceso de trabajo no está activo; vuelve a cargar el archivo.','e');setRunStatus('Vuelve a cargar el archivo.','e');$('#btnRun').disabled=false;return}
+  writeChain=Promise.resolve();
+  setBusy(true);$('#prog').classList.add('show');pState={phase:-1};
+  setRunStatus(dest==='disk'?'Optimizando y escribiendo directamente en disco…':'Optimizando… el resultado se descargará al terminar.');
+  log('Iniciando optimización…');
+  worker.postMessage({cmd:'optimize',opts:o});
+}
+
+/* ------------------ eventos ------------------ */
+renderOpts();
+const drop=$('#drop'),fin=$('#fileIn');
+drop.onclick=()=>fin.click();
+fin.onchange=()=>{if(fin.files[0])startAnalysis(fin.files[0]);fin.value=''};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');const f=e.dataTransfer.files[0];if(f)startAnalysis(f)};
+$('#btnRun').onclick=run;
+$('#btnCancel').onclick=()=>{if(!busy)return;worker.terminate();worker=null;log('Proceso cancelado.','w');setBusy(false);$('#prog').classList.remove('show');
+  if(writable){try{writable.abort?.()}catch(_){}writable=null}blobParts=null;setRunStatus('');if(stats){stats=null;$('#btnRun').disabled=true;log('Vuelve a seleccionar el archivo para analizarlo de nuevo.')}};
+window.addEventListener('error',e=>log('Error de la página: '+(e.message||e.error),'e'));
+window.addEventListener('unhandledrejection',e=>{const r=e.reason;log('Error no controlado: '+((r&&r.name?r.name+': ':'')+(r&&r.message||r)),'e')});
+try{const sm=localStorage.getItem('optifc.saveMode');if(sm)$('#saveMode').value=sm}catch(_){}
+$('#saveMode').addEventListener('change',e=>{try{localStorage.setItem('optifc.saveMode',e.target.value)}catch(_){}});
+log('Listo. Selecciona un archivo IFC (formato STEP .ifc).');
+if(!window.showSaveFilePicker)log('Aviso: este navegador no admite escritura directa a disco (File System Access). Para modelos de varios GB usa Chrome o Edge.','w');
+</script>
+</body>
+</html>
